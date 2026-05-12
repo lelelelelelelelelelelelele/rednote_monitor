@@ -1,0 +1,76 @@
+# =================================================================
+# rednote_monitor .gitignore
+# =================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- venv / uv ---
+.venv/
+venv/
+env/
+.python-version
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Claude Code 工作目录 ---
+.claude/
+
+# --- 密钥 / API / Cookies ---
+.env
+.env.*
+!.env.example
+*.cookie
+*.pem
+*.key
+**/cookies/
+
+# --- External: 克隆的第三方仓库 ---
+# xiaohongshu-mcp 含 .exe + cookies/ + 自己的 .git
+# xhs-aigc-dataset 含 240+ CSV / 解压数据
+# 都不进我们的 git 历史,需要时用 MIGRATION.md 重新装
+external/
+
+# --- 抓回来的真实 XHS 数据(含用户 ID / 昵称 / IP) ---
+# 本地保留,不入 git。想公开发布时把脱敏小样本另放 tests/fixtures/
+data/raw/
+data/scored/
+data/backtest/
+data/monitor.db
+data/*.db
+data/*.sqlite*
+
+# --- M4 评测:标注集保留 (work product),运行结果不留 ---
+data/eval/results_*.csv
+data/eval/results_*.json
+data/eval/*.cache.json
+
+# --- LLM / API 用量日志、本地缓存 ---
+*.log
+.litellm_cache/
+.cache/
+
+# --- 根目录孤儿图(粘贴截图常叫 image.png;架构图请放 docs/) ---
+/*.png
+/*.jpg
+/*.jpeg
+
+# --- build / dist ---
+build/
+dist/
+*.whl
+*.tar.gz

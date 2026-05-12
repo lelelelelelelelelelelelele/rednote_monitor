@@ -1,0 +1,37 @@
+# config/watchlist.yaml
+# rednote_monitor watchlist — 监控小红书"反指"信号的标的清单
+# 字段说明:
+#   id        : 内部主键(英文短码,后续 DailyMetric 落库用)
+#   name      : 中文名(展示用)
+#   keywords  : 喂给 search_feeds 的关键词数组(逐个查,合并去重)
+#   market    : 标的所属市场,用于决定 K 线源(akshare / yfinance)
+#   ticker    : 可选,有就给回测模块用
+#
+# 最小测试期(2026-05-13)只跑 oracle 一项,其余先挂着不抓。
+
+watchlist:
+  - id: hsi_tech
+    name: 恒生科技
+    keywords: [恒生科技, 恒生科技指数, HSTECH]
+    market: HK
+    ticker: "HSTECH.HI"
+    enabled: false   # M1 最小测试期暂关
+
+  - id: semiconductor
+    name: 半导体
+    keywords: [半导体, 芯片, 国产芯片]
+    market: A+HK
+    enabled: false
+
+  - id: robotics
+    name: 机器人
+    keywords: [机器人, 人形机器人, 具身智能]
+    market: A+US
+    enabled: false
+
+  - id: oracle
+    name: 甲骨文
+    keywords: [甲骨文, Oracle, ORCL]
+    market: US
+    ticker: ORCL
+    enabled: true    # M1 first end-to-end test
