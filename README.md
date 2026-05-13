@@ -73,7 +73,3 @@ M1 的 ManualScraper 兜底路径:把手抓的 30 条评论丢到 `data/raw/manu
 - **不传 `publish_time` 给 scraper**,只传 `sort_by=最新`;时间窗在客户端用 `int(post_id[:8], 16)` 反解切片。
 
 ---
-
-## 换机迁移
-
-H 盘整盘搬到新电脑 / 重装系统:见 BLUEPRINT § 九,30 分钟内恢复开发状态。
