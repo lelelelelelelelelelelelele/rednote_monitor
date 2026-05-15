@@ -6,52 +6,15 @@
 
 ## 一、系统架构图
 
-```mermaid
-flowchart TB
-    %% Config
-    WL["watchlist.yaml<br/>tickers + 关键词"]:::config
-    PR["prompts.yaml<br/>LLM prompt 模板"]:::config
+![架构图](docs/architecture/diagram.png)
 
-    %% Pipeline
-    M1["<b>M1 Scraper</b><br/>fetch(keyword, date)<br/>→ List&lt;RawPost&gt;"]:::scraper
-    M2["<b>M2 Sentiment Engine</b><br/>analyze(post)<br/>→ ScoredPost<br/>多模态 LLM"]:::ai
-    M3["<b>M3 Aggregator</b><br/>roll_up(date)<br/>→ DailyMetric"]:::data
-    DB[("SQLite<br/>daily_metrics")]:::data
+架构图源文件都在 [`docs/architecture/`](docs/architecture/):
 
-    %% QA
-    M4["<b>M4 Eval Bench</b><br/>200 条人工标注<br/>× 多模型对比"]:::ai
+- [`schema.yaml`](docs/architecture/schema.yaml) —— **真值**,改架构改这个
+- [`diagram.png`](docs/architecture/diagram.png) —— 图生图渲的高保真版(上图)
+- [`diagram.mmd`](docs/architecture/diagram.mmd) —— mermaid 源,粘到 [mermaid.live](https://mermaid.live) 可看
 
-    %% Output
-    M5["<b>M5 Backtest</b><br/>K-line 叠图<br/>相关性 / 事件研究"]:::data
-    M6["<b>M6 Dashboard</b><br/>Streamlit"]:::front
-    M7["<b>M7 Notify</b><br/>邮件 / 微信"]:::front
-
-    %% Orchestration
-    OR["scripts/daily_run.py<br/>+ 定时任务"]:::orch
-
-    %% Flow
-    WL --> M1
-    PR --> M2
-    M1 -- raw_posts.jsonl --> M2
-    M2 -- scored_posts.jsonl --> M3
-    M3 --> DB
-    M4 -. 选出 best model .-> M2
-    DB --> M5
-    DB --> M6
-    DB --> M7
-    OR --> M1
-    OR --> M2
-    OR --> M3
-
-    classDef config fill:#fef3c7,stroke:#f59e0b,color:#000
-    classDef scraper fill:#dbeafe,stroke:#3b82f6,color:#000
-    classDef ai fill:#fce7f3,stroke:#ec4899,color:#000
-    classDef data fill:#d1fae5,stroke:#10b981,color:#000
-    classDef front fill:#e0e7ff,stroke:#6366f1,color:#000
-    classDef orch fill:#f3f4f6,stroke:#6b7280,color:#000
-```
-
-> 看不到图?把整段 `mermaid` 粘到 https://mermaid.live 即可。VS Code 装 Markdown Preview Mermaid Support 也行。
+三处内容必须一致。改架构动 schema,然后手工同步图和 mermaid。
 
 ---
 
@@ -386,6 +349,7 @@ rednote_monitor/
 3. **LLM 反讽识别翻车:** 必须靠 M4 兜底,选出在反讽子集上 > 70% 准确率的模型才上线
 4. **多人协作分支冲突:** `src/models.py` 是高频冲突点,改前**必须**群里 +1
 5. **关键词字面歧义(2026-05-13 实测):** 宽 keyword 在 publish_time filter 下会触发字面相关性扩召(`甲骨文`→古文字学习,`机器人`→亲子手工)。**对策:** scraper 调用只传 `sort_by=最新`,不传 publish_time;时间窗在客户端用 `int(post_id[:8], 16)` 切
+6. **xiaohongshu-mcp 风控升级(2026-05-14 实测):** 小红书加强了对自动化操作的检测,即使用户**只搜索浏览不发帖**也可能触发警告/限制([xpzouying/xiaohongshu-mcp#668](https://github.com/xpzouying/xiaohongshu-mcp/issues/668))。调研了 3 个替代工具(xhs-mcp JS 逆向/XHS-Downloader/Agent-Reach),没有一个明显更安全——Playwright 的真实浏览器指纹反而是相对优势。**对策:** ① 老号收敛用法(低频+随机延迟+本地部署)比换工具更有效;② 准备小号备用;③ ManualScraper 永远是兜底;④ 详见 `docs/xhs_mcp_risk_notes.md`
 
 ---
 
@@ -395,4 +359,4 @@ rednote_monitor/
 
 ---
 
-*最后更新:2026-05-13 · 维护者:lele*
+*最后更新:2026-05-14 · 维护者:lele*

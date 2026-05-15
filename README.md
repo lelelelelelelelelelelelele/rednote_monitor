@@ -57,7 +57,7 @@ M1 的 ManualScraper 兜底路径:把手抓的 30 条评论丢到 `data/raw/manu
 ├── config/watchlist.yaml  # 标的 + 关键词
 ├── src/                   # 业务代码(scraper / sentiment / aggregate / ...)
 ├── data/                  # 抓回来的 raw / scored,全部 gitignore
-├── docs/architecture.png  # 渲染好的架构图
+├── docs/architecture/     # 架构图三件套:schema.yaml(真值) + diagram.{mmd,png}
 ├── external/              # xiaohongshu-mcp + xhs-aigc-dataset,不入 git
 └── .mcp.json              # Claude Code 的 MCP 配置
 ```
