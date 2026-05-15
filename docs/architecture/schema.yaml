@@ -1,0 +1,191 @@
+# rednote_monitor 架构图 schema —— Source of Truth
+#
+# 这是架构图的真值数据。两个下游 view 都从这里手工同步:
+#   1. diagram.mmd —— mermaid 源,粘到 mermaid.live 看,或 GitHub README 复用
+#   2. diagram.png —— 图生图渲的高保真版,BLUEPRINT § 一 嵌图用
+#                     (prompt 自己手写,在 agent 外跑模型)
+#
+# 编辑规则:
+#   - 改这里 = 改架构。改完手工把 diagram.mmd 同步过来,diagram.png 重渲。
+#   - 字段含义见 § meta / § categories / § nodes / § edges 各段的注释。
+#   - 字段保持平铺,不要嵌套 group/cluster —— 视觉分组靠 categories + layer
+#     表达,布局由各 renderer 自己决定。
+
+meta:
+  title: "rednote_monitor 项目架构图"
+  subtitle: "对小红书指定 ticker 的帖子进行情绪监测,辅助交易"
+  updated: "2026-05-16"
+  # 渲染方向提示(top-to-bottom / left-to-right)。各 renderer 可参考。
+  direction: top_to_bottom
+
+# ─────────────────────────────────────────────────────────────────────
+# categories: 节点的视觉/语义分类
+# ─────────────────────────────────────────────────────────────────────
+# 每个节点必须挂在一个 category 上。category 决定:
+#   - 节点填色 / 边框色(fill / stroke,十六进制)
+#   - 文生图 prompt 里给的角色描述(role)—— 告诉模型"这个框是什么"
+# 颜色和 BLUEPRINT.md mermaid 块的 classDef 对齐,改色要两边同步直到生成
+# 器写好为止。
+
+categories:
+  config:
+    role: "配置文件 / 系统输入"
+    fill: "#fef3c7"
+    stroke: "#f59e0b"
+  scraper:
+    role: "数据采集"
+    fill: "#dbeafe"
+    stroke: "#3b82f6"
+  ai:
+    role: "LLM / AI 任务"
+    fill: "#fce7f3"
+    stroke: "#ec4899"
+  data:
+    role: "数据处理 / 存储"
+    fill: "#d1fae5"
+    stroke: "#10b981"
+  front:
+    role: "前端 / 输出"
+    fill: "#e0e7ff"
+    stroke: "#6366f1"
+  orch:
+    role: "调度 / Orchestration"
+    fill: "#f3f4f6"
+    stroke: "#6b7280"
+
+# ─────────────────────────────────────────────────────────────────────
+# nodes: 节点列表
+# ─────────────────────────────────────────────────────────────────────
+# 必填:
+#   id        —— 稳定标识符,被 edges.from/to 引用。下划线/字母,不重复。
+#   label     —— 框内主标题
+#   category  —— 引用上面 categories 的 key
+# 选填:
+#   signature —— 接口签名(函数/SQL/调用形式),框内副行
+#   note      —— 框内底行(产物文件、技术细节、说明等)
+#   shape     —— 默认 rect。可选:cylinder(数据库) / page(配置文件)
+#   style     —— 默认 solid。可选:dashed(虚框,例如 M4 评测态)
+#   layer     —— 布局提示:top / middle / bottom。renderer 可忽略。
+#   align     —— 布局提示:left / center / right。renderer 可忽略。
+#
+# layer + align 只是给图生模型的位置 hint,mermaid 自动布局会无视它。
+
+nodes:
+  - id: watchlist
+    label: "watchlist.yaml"
+    category: config
+    note: "tickers + 关键词"
+    shape: page
+    layer: top
+    align: left
+
+  - id: prompts
+    label: "prompts.yaml"
+    category: config
+    note: "LLM Prompt 模板"
+    shape: page
+    layer: top
+    align: left
+
+  - id: m4
+    label: "M4 模型评测 / Eval Bench"
+    category: ai
+    note: "200 条人工标注 × 多模型对比"
+    style: dashed
+    layer: top
+    align: center
+
+  - id: m5
+    label: "M5 回测 / Backtest"
+    category: data
+    note: "K-line 叠图 / 相关性 / 事件研究"
+    layer: top
+    align: right
+
+  - id: m1
+    label: "M1 数据采集 / Scraper"
+    category: scraper
+    signature: "fetch(keyword, date) → List<RawPost>"
+    note: "raw_posts.jsonl"
+    layer: middle
+    align: left
+
+  - id: m2
+    label: "M2 情绪打分 / Sentiment Engine"
+    category: ai
+    signature: "analyze(post) → ScoredPost"
+    note: "多模态 LLM"
+    layer: middle
+    align: center
+
+  - id: m3
+    label: "M3 日度聚合 / Aggregator"
+    category: data
+    signature: "roll_up(date) → DailyMetric"
+    note: "scored_posts.jsonl → daily_metrics"
+    layer: middle
+    align: center
+
+  - id: db
+    label: "SQLite 数据库"
+    category: data
+    note: "daily_metrics"
+    shape: cylinder
+    layer: middle
+    align: center
+
+  - id: m6
+    label: "M6 可视化 / Dashboard"
+    category: front
+    note: "Streamlit"
+    layer: middle
+    align: right
+
+  - id: m7
+    label: "M7 告警 / Notify"
+    category: front
+    note: "邮件 / 微信"
+    layer: bottom
+    align: right
+
+  - id: orch
+    label: "调度 / Orchestration"
+    category: orch
+    note: "scripts/daily_run.py + 定时任务"
+    layer: bottom
+    align: center
+
+# ─────────────────────────────────────────────────────────────────────
+# edges: 边列表
+# ─────────────────────────────────────────────────────────────────────
+# 必填:
+#   from / to —— 引用 nodes.id
+#   kind      —— 语义类别,renderer 根据 kind 决定线型/颜色/方向:
+#                  data_flow     主数据流(实线 + 数据文件名 label)
+#                  config_input  配置输入(实线,无 label)
+#                  orchestration 调度触发(实线灰)
+#                  calibration   模型校准回喂(虚线)
+# 选填:
+#   label     —— 边上显示的文字(数据文件名 / 关系名)
+#   style     —— 默认随 kind 推断。calibration 默认 dashed。
+
+edges:
+  # 配置输入
+  - {from: watchlist, to: m1, kind: config_input}
+  - {from: prompts,   to: m2, kind: config_input}
+
+  # 主数据流
+  - {from: m1, to: m2, kind: data_flow, label: "raw_posts.jsonl"}
+  - {from: m2, to: m3, kind: data_flow, label: "scored_posts.jsonl"}
+  - {from: m3, to: db, kind: data_flow}
+  - {from: db, to: m5, kind: data_flow}
+  - {from: db, to: m6, kind: data_flow}
+  - {from: db, to: m7, kind: data_flow}
+
+  # 模型校准(虚线回喂)
+  - {from: m4, to: m2, kind: calibration, label: "选出 best model"}
+
+  # 调度
+  - {from: orch, to: m1, kind: orchestration}
+  - {from: orch, to: m2, kind: orchestration}
+  - {from: orch, to: m3, kind: orchestration}
