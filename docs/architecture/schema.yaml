@@ -15,6 +15,7 @@ meta:
   title: "rednote_monitor 项目架构图"
   subtitle: "对小红书指定 ticker 的帖子进行情绪监测,辅助交易"
   updated: "2026-05-16"
+  version: "0.2"
   # 渲染方向提示(top-to-bottom / left-to-right)。各 renderer 可参考。
   direction: top_to_bottom
 
@@ -44,6 +45,10 @@ categories:
     role: "数据处理 / 存储"
     fill: "#d1fae5"
     stroke: "#10b981"
+  research:
+    role: "研究 / 评测 / 信号验证(旁路,虚框)"
+    fill: "#f5f3ff"
+    stroke: "#7c3aed"
   front:
     role: "前端 / 输出"
     fill: "#e0e7ff"
@@ -79,17 +84,9 @@ nodes:
     layer: top
     align: left
 
-  - id: prompts
-    label: "prompts.yaml"
-    category: config
-    note: "LLM Prompt 模板"
-    shape: page
-    layer: top
-    align: left
-
   - id: m4
     label: "M4 模型评测 / Eval Bench"
-    category: ai
+    category: research
     note: "200 条人工标注 × 多模型对比"
     style: dashed
     layer: top
@@ -97,8 +94,9 @@ nodes:
 
   - id: m5
     label: "M5 回测 / Backtest"
-    category: data
+    category: research
     note: "K-line 叠图 / 相关性 / 事件研究"
+    style: dashed
     layer: top
     align: right
 
@@ -127,9 +125,9 @@ nodes:
     align: center
 
   - id: db
-    label: "SQLite 数据库"
+    label: "DailyMetric 指标"
     category: data
-    note: "daily_metrics"
+    note: "SQLite · daily_metrics"
     shape: cylinder
     layer: middle
     align: center
@@ -172,12 +170,11 @@ nodes:
 edges:
   # 配置输入
   - {from: watchlist, to: m1, kind: config_input}
-  - {from: prompts,   to: m2, kind: config_input}
 
-  # 主数据流
+  # 主数据流(产物:DailyMetric 指标)
   - {from: m1, to: m2, kind: data_flow, label: "raw_posts.jsonl"}
   - {from: m2, to: m3, kind: data_flow, label: "scored_posts.jsonl"}
-  - {from: m3, to: db, kind: data_flow}
+  - {from: m3, to: db, kind: data_flow, label: "DailyMetric"}
   - {from: db, to: m5, kind: data_flow}
   - {from: db, to: m6, kind: data_flow}
   - {from: db, to: m7, kind: data_flow}

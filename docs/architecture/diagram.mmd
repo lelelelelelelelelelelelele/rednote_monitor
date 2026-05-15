@@ -1,22 +1,21 @@
-%% source of truth: docs/architecture/schema.yaml
+%% source of truth: docs/architecture/schema.yaml (v0.2)
 %% 这是 README/GitHub 自渲染的 fallback view。改架构改 schema.yaml,本块同步抄过来。
 %% 预览: 整块粘到 https://mermaid.live,或 VS Code 装 Markdown Preview Mermaid Support。
 flowchart TB
-    %% Config
+    %% Config(系统级输入)
     WL["watchlist.yaml<br/>tickers + 关键词"]:::config
-    PR["prompts.yaml<br/>LLM prompt 模板"]:::config
 
     %% Pipeline
     M1["<b>M1 Scraper</b><br/>fetch(keyword, date)<br/>→ List&lt;RawPost&gt;<br/>raw_posts.jsonl"]:::scraper
     M2["<b>M2 Sentiment Engine</b><br/>analyze(post)<br/>→ ScoredPost<br/>多模态 LLM"]:::ai
     M3["<b>M3 Aggregator</b><br/>roll_up(date)<br/>→ DailyMetric<br/>scored_posts.jsonl → daily_metrics"]:::data
-    DB[("SQLite<br/>daily_metrics")]:::data
+    DB[("DailyMetric 指标<br/>SQLite · daily_metrics")]:::data
 
-    %% QA
-    M4["<b>M4 Eval Bench</b><br/>200 条人工标注<br/>× 多模型对比"]:::ai
+    %% Research / Eval(虚框旁路)
+    M4["<b>M4 Eval Bench</b><br/>200 条人工标注<br/>× 多模型对比"]:::research
+    M5["<b>M5 Backtest</b><br/>K-line 叠图<br/>相关性 / 事件研究"]:::research
 
-    %% Output
-    M5["<b>M5 Backtest</b><br/>K-line 叠图<br/>相关性 / 事件研究"]:::data
+    %% Output(生产侧消费)
     M6["<b>M6 Dashboard</b><br/>Streamlit"]:::front
     M7["<b>M7 Notify</b><br/>邮件 / 微信"]:::front
 
@@ -25,10 +24,9 @@ flowchart TB
 
     %% Flow
     WL --> M1
-    PR --> M2
     M1 -- raw_posts.jsonl --> M2
     M2 -- scored_posts.jsonl --> M3
-    M3 --> DB
+    M3 -- DailyMetric --> DB
     M4 -. 选出 best model .-> M2
     DB --> M5
     DB --> M6
@@ -37,9 +35,10 @@ flowchart TB
     OR --> M2
     OR --> M3
 
-    classDef config fill:#fef3c7,stroke:#f59e0b,color:#000
-    classDef scraper fill:#dbeafe,stroke:#3b82f6,color:#000
-    classDef ai fill:#fce7f3,stroke:#ec4899,color:#000
-    classDef data fill:#d1fae5,stroke:#10b981,color:#000
-    classDef front fill:#e0e7ff,stroke:#6366f1,color:#000
-    classDef orch fill:#f3f4f6,stroke:#6b7280,color:#000
+    classDef config   fill:#fef3c7,stroke:#f59e0b,color:#000
+    classDef scraper  fill:#dbeafe,stroke:#3b82f6,color:#000
+    classDef ai       fill:#fce7f3,stroke:#ec4899,color:#000
+    classDef data     fill:#d1fae5,stroke:#10b981,color:#000
+    classDef research fill:#f5f3ff,stroke:#7c3aed,color:#000,stroke-dasharray:5 5
+    classDef front    fill:#e0e7ff,stroke:#6366f1,color:#000
+    classDef orch     fill:#f3f4f6,stroke:#6b7280,color:#000
