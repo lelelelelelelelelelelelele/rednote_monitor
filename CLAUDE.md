@@ -10,13 +10,14 @@
 
 ---
 
-## 必读三份文档
+## 必读文档
 
 | 文档 | 什么时候 Read |
 |---|---|
 | @docs/collab_guide.md | partner 让你做任何 git / PR / merge 操作**前** |
 | @.github/pull_request_template.md | partner 让你发 PR 时,描述**严格按 4 问填** |
 | @BLUEPRINT.md | partner 提到 M1-M7 / 数据契约 / KPI / 模块分工时 |
+| @report/RULES.md | partner 操作 `report/` 目录（新建/修改汇报材料）时 |
 
 ---
 

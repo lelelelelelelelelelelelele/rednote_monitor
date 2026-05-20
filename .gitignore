@@ -72,6 +72,10 @@ MIGRATION.md
 /*.jpg
 /*.jpeg
 
+# --- Report 预览产物(截图可从 PPT 重导,PDF 可手动存) ---
+report/**/_review/
+report/**/*.pdf
+
 # --- build / dist ---
 build/
 dist/
