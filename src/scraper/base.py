@@ -12,8 +12,14 @@ class Scraper(Protocol):
     """给定 keyword + 目标日期,返回当日发布的帖子(含评论)。
 
     BLUEPRINT § M1:"给定 keyword + 日期,产出当日帖子 + 评论的 JSONL"
-    实现方可以同步可以异步,只要返回 list[RawPost] 即可。
+    所有实现均为 async,返回 list[RawPost]。
+    watchlist_id 用于落盘时标记数据来源,默认 None。
     """
 
-    def fetch(self, keyword: str, target_date: date) -> list[RawPost]:
+    async def fetch(
+        self,
+        keyword: str,
+        target_date: date,
+        watchlist_id: str | None = None,
+    ) -> list[RawPost]:
         ...

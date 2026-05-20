@@ -16,11 +16,14 @@ BLUEPRINT § M1:
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
 from ..models import RawPost, parse_xhs_feed_detail
+
+logger = logging.getLogger(__name__)
 
 
 class ManualScraper:
@@ -31,11 +34,17 @@ class ManualScraper:
 
     # ----- BLUEPRINT 接口 ----- #
 
-    def fetch(self, keyword: str, target_date: date) -> list[RawPost]:
+    async def fetch(
+        self,
+        keyword: str,
+        target_date: date,
+        watchlist_id: str | None = None,
+    ) -> list[RawPost]:
         """按 keyword + publish_date 精确过滤。
 
         注意:publish_date 是帖子的发布日(UTC+8),不是抓取日。manual 数据是历史快照,
         想拿"今天发布"的帖子通常拿不到 —— 这是 M1 真 scraper 替代的核心动机。
+        watchlist_id 参数保持接口一致,ManualScraper 不使用它(从 _meta 读取)。
         """
         return [
             post
@@ -81,7 +90,7 @@ class ManualScraper:
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError as e:
-                print(f"[ManualScraper] skip malformed json: {path.name} ({e})")
+                logger.warning(f"[ManualScraper] skip malformed json: {path.name} ({e})")
                 continue
 
             meta = payload.get("_meta", {})
@@ -99,7 +108,7 @@ class ManualScraper:
                     fetched_at=fetched_at,
                 )
             except Exception as e:
-                print(f"[ManualScraper] skip unparseable: {path.name} ({type(e).__name__}: {e})")
+                logger.warning(f"[ManualScraper] skip unparseable: {path.name} ({type(e).__name__}: {e})")
 
     @staticmethod
     def _parse_fetched_at(s: str | None) -> datetime | None:
