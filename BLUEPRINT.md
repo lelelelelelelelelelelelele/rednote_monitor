@@ -87,7 +87,7 @@ flowchart TB
   - **多模态:** image 直接喂 vision model(Qwen-VL / GPT-4o / Claude),不做 OCR
   - polarity 五档: -2 / -1 / 0 / +1 / +2
   - 必须输出 `quote` 字段(LLM 抓的原句证据),用于人工审计
-- **使用模型:** 由 M4 决定;开发期默认 GPT-4o-mini
+- **使用模型:** 由 M4 决定;开发期默认 mimo-v2.5-pro (小米 Token Plan, OpenAI 兼容格式)
 - **预计工作量:** 2 天
 
 ### M3 · Aggregator + Storage(日度聚合)
@@ -274,7 +274,7 @@ CREATE TABLE daily_metrics (
 - ⬜ **3 人版 only**:`src/notify/push.py` 邮件 SMTP + Server 酱
 
 #### Owner B · M2 Sentiment + M4 Eval
-- ⬜ `src/sentiment/engine.py` + `prompts.py`:litellm 多模型,默认 GPT-4o-mini
+- ⬜ `src/sentiment/engine.py` + `prompts.py`:httpx 直连 OpenAI 兼容 API,默认 mimo-v2.5-pro (小米 API)
 - ⬜ 严格遵守 § 三 ScoredPost 设计:post / per-comment 分开打,LLM 只给离散值,`sentiment_comments_avg` 在客户端按 `n_likes` 加权得到(memory [[feedback-llm-outputs]] 已锁死)
 - ⬜ 必须输出 `is_relevant` 门控(memory [[m1-field-findings]] 第 3 条:机器人 keyword 噪声率 ~50%)
 - ⬜ M4 标注集 `data/eval/labeled_200.csv`(标 200 条,含 ≥30 条反讽子集)+ `scripts/label_helper.py` 半自动标注工具
@@ -336,7 +336,7 @@ CREATE TABLE daily_metrics (
 | 包管理 | `uv` | 快 |
 | 数据校验 | `pydantic` | RawPost / ScoredPost 全用它 |
 | 存储 | `sqlmodel` (SQLite) | 小项目够用,迁移轻 |
-| LLM 多模型调用 | `litellm` | 一套代码切多家,M4 必备 |
+| LLM 多模型调用 | `httpx` + OpenAI 兼容 API | 直连小米 API / SiliconFlow / OpenRouter 等,M4 可切换模型 |
 | 多模态 | OpenAI SDK / Anthropic SDK | 直接支持 image |
 | K 线 | `yfinance`(美/Crypto)+ `akshare`(A股) | 免费 |
 | 调度 | Windows Task Scheduler / GitHub Actions | 别上 Airflow |

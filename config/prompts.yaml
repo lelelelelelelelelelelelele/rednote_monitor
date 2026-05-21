@@ -57,11 +57,13 @@ comment_batch:
     COMMENTS TO ANALYZE:
     {comments_json}
 
-    Respond with a JSON array (no markdown, no extra text). One object per comment, same order:
-    [
-      {{"comment_id": "...", "sentiment": -2/-1/0/1/2, "is_relevant": true/false}},
-      ...
-    ]
+    Respond with a JSON object containing a "comments" array (no markdown, no extra text). One object per comment, same order:
+    {{
+      "comments": [
+        {{"comment_id": "...", "sentiment": -2/-1/0/1/2, "is_relevant": true/false}},
+        ...
+      ]
+    }}
 
     - sentiment: -2=very bearish, -1=bearish, 0=neutral, 1=bullish, 2=very bullish
     - is_relevant: Does this comment discuss "{keyword}" as an investment/financial topic?

@@ -2,13 +2,13 @@
 
 使用方式:
     # 确保 xiaohongshu-mcp 已启动 (http://127.0.0.1:18060/mcp)
-    uv run python scripts/test_scraper.py
+    uv run python tests/m1_scraper/test_manual.py
 
     # 指定 keyword 和日期
-    uv run python scripts/test_scraper.py --keyword 甲骨文 --date 2026-05-13
+    uv run python tests/m1_scraper/test_manual.py --keyword 甲骨文 --date 2026-05-13
 
     # 使用 ManualScraper 测试
-    uv run python scripts/test_scraper.py --scraper manual
+    uv run python tests/m1_scraper/test_manual.py --scraper manual
 """
 
 from __future__ import annotations
@@ -18,10 +18,10 @@ import asyncio
 import logging
 from datetime import date
 
-from src.scraper.manual import ManualScraper
-from src.scraper.xhs_mcp import XhsMcpScraper
-from src.scraper.fallback import FallbackScraper
-from src.scraper.monitor import KeywordMonitor
+from src.m1_scraper.manual import ManualScraper
+from src.m1_scraper.xhs_mcp import XhsMcpScraper
+from src.m1_scraper.fallback import FallbackScraper
+from src.m0_monitor import KeywordMonitor
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def test_xhs_mcp_scraper(keyword: str, target_date: date) -> None:
+async def run_xhs_mcp_scraper(keyword: str, target_date: date) -> None:
     """测试 XhsMcpScraper。"""
     logger.info(f"=== Testing XhsMcpScraper ===")
     logger.info(f"Keyword: {keyword}, Date: {target_date}")
@@ -48,7 +48,7 @@ async def test_xhs_mcp_scraper(keyword: str, target_date: date) -> None:
     return posts
 
 
-async def test_manual_scraper(keyword: str, target_date: date) -> None:
+async def run_manual_scraper(keyword: str, target_date: date) -> None:
     """测试 ManualScraper。"""
     logger.info(f"=== Testing ManualScraper ===")
     logger.info(f"Keyword: {keyword}, Date: {target_date}")
@@ -64,7 +64,7 @@ async def test_manual_scraper(keyword: str, target_date: date) -> None:
     return posts
 
 
-async def test_fallback_scraper(keyword: str, target_date: date) -> None:
+async def run_fallback_scraper(keyword: str, target_date: date) -> None:
     """测试 FallbackScraper。"""
     logger.info(f"=== Testing FallbackScraper ===")
     logger.info(f"Keyword: {keyword}, Date: {target_date}")
@@ -133,13 +133,13 @@ def main():
     target_date = date.fromisoformat(args.date) if args.date else date(2026, 5, 13)
 
     if args.scraper in ("xhs_mcp", "all"):
-        asyncio.run(test_xhs_mcp_scraper(args.keyword, target_date))
+        asyncio.run(run_xhs_mcp_scraper(args.keyword, target_date))
 
     if args.scraper in ("manual", "all"):
-        asyncio.run(test_manual_scraper(args.keyword, target_date))
+        asyncio.run(run_manual_scraper(args.keyword, target_date))
 
     if args.scraper in ("fallback", "all"):
-        asyncio.run(test_fallback_scraper(args.keyword, target_date))
+        asyncio.run(run_fallback_scraper(args.keyword, target_date))
 
     if args.scraper == "all":
         test_keyword_monitor()

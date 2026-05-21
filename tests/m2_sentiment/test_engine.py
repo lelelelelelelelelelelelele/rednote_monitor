@@ -13,8 +13,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.models import CommentScore, RawComment, RawPost
-from src.sentiment.engine import SentimentEngine, _strip_markdown_fences, analyze
-from src.sentiment.prompts import PromptTemplates
+from src.m2_sentiment.engine import SentimentEngine, _strip_markdown_fences, analyze
+from src.m2_sentiment.prompts import PromptTemplates
 
 
 # ------------------------------------------------------------------ #
@@ -84,10 +84,10 @@ def mock_comment_batch_response():
 # ------------------------------------------------------------------ #
 
 
-def _mock_llm(return_value, cost=0.001):
-    """Create a mock _call_llm that returns (parsed_json, cost)."""
+def _mock_llm(return_value, cost=0.001, tokens=100):
+    """Create a mock _call_llm that returns (parsed_json, cost, tokens)."""
     def _side_effect(system, user, image_urls=None):
-        return return_value, cost
+        return return_value, cost, tokens
     return _side_effect
 
 
@@ -95,8 +95,8 @@ def _mock_llm_sequence(responses):
     """Create a mock _call_llm that returns different values on successive calls."""
     iter_responses = iter(responses)
     def _side_effect(system, user, image_urls=None):
-        val, cost = next(iter_responses)
-        return val, cost
+        val, cost, tokens = next(iter_responses)
+        return val, cost, tokens
     return _side_effect
 
 
@@ -185,9 +185,9 @@ class TestPromptTemplates:
 
 class TestScorePost:
     def test_happy_path(self, sample_post, mock_post_response):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(mock_post_response)):
-            result, cost = engine._score_post(sample_post)
+            result, cost, tokens = engine._score_post(sample_post)
 
         assert result["is_relevant"] is True
         assert result["sentiment"] == 2
@@ -196,7 +196,7 @@ class TestScorePost:
         assert cost > 0
 
     def test_irrelevant_post(self, sample_post):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         response = {
             "is_relevant": False,
             "sentiment": 0,
@@ -204,40 +204,40 @@ class TestScorePost:
             "quote": "甲骨文是古代文字",
         }
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(response)):
-            result, _ = engine._score_post(sample_post)
+            result, _, _ = engine._score_post(sample_post)
 
         assert result["is_relevant"] is False
 
     def test_is_relevant_string_coercion(self, sample_post):
         """LLM returns 'true' as string instead of bool."""
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         response = {"is_relevant": "true", "sentiment": 1, "fomo": 3, "quote": "test"}
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(response)):
-            result, _ = engine._score_post(sample_post)
+            result, _, _ = engine._score_post(sample_post)
 
         assert result["is_relevant"] is True
 
     def test_invalid_sentiment_retries_then_defaults(self, sample_post):
         """Invalid sentiment retries then returns safe defaults."""
-        engine = SentimentEngine(model="gpt-4o-mini", max_retries=0)
+        engine = SentimentEngine(model="test-model", max_retries=0)
         response = {"is_relevant": True, "sentiment": 3, "fomo": 5, "quote": "test"}
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(response)):
-            result, _ = engine._score_post(sample_post)
+            result, _, _ = engine._score_post(sample_post)
 
         assert result["sentiment"] == 0  # default after exhausted retries
 
     def test_fomo_clamping(self, sample_post):
         """LLM returns fomo=15, should be clamped to 10."""
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         response = {"is_relevant": True, "sentiment": 0, "fomo": 15, "quote": "test"}
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(response)):
-            result, _ = engine._score_post(sample_post)
+            result, _, _ = engine._score_post(sample_post)
 
         assert result["fomo"] == 10
 
     def test_retry_on_malformed_json(self, sample_post, mock_post_response):
         """First call fails, second succeeds."""
-        engine = SentimentEngine(model="gpt-4o-mini", max_retries=2)
+        engine = SentimentEngine(model="test-model", max_retries=2)
         call_count = 0
 
         def _flaky_llm(system, user, image_urls=None):
@@ -245,20 +245,20 @@ class TestScorePost:
             call_count += 1
             if call_count == 1:
                 raise json.JSONDecodeError("bad", "", 0)
-            return mock_post_response, 0.001
+            return mock_post_response, 0.001, 100
 
         with patch.object(engine, "_call_llm", side_effect=_flaky_llm):
-            result, _ = engine._score_post(sample_post)
+            result, _, _ = engine._score_post(sample_post)
 
         assert result["sentiment"] == 2
         assert call_count == 2
 
     def test_exhausted_retries_returns_defaults(self, sample_post):
-        engine = SentimentEngine(model="gpt-4o-mini", max_retries=0)
+        engine = SentimentEngine(model="test-model", max_retries=0)
         with patch.object(
             engine, "_call_llm", side_effect=json.JSONDecodeError("bad", "", 0)
         ):
-            result, cost = engine._score_post(sample_post)
+            result, cost, tokens = engine._score_post(sample_post)
 
         assert result["is_relevant"] is True
         assert result["sentiment"] == 0
@@ -271,11 +271,11 @@ class TestScorePost:
 
 class TestScoreComments:
     def test_batch_happy_path(self, sample_post, mock_comment_batch_response):
-        engine = SentimentEngine(model="gpt-4o-mini", mode="batch")
+        engine = SentimentEngine(model="test-model", mode="batch")
         with patch.object(
             engine, "_call_llm", side_effect=_mock_llm(mock_comment_batch_response)
         ):
-            scores, cost = engine._score_comments_batch(sample_post)
+            scores, cost, tokens = engine._score_comments_batch(sample_post)
 
         assert len(scores) == 2
         assert scores[0].comment_id == "c1"
@@ -285,7 +285,7 @@ class TestScoreComments:
 
     def test_batch_wrapped_in_dict(self, sample_post):
         """LLM wraps response in {"comments": [...]}."""
-        engine = SentimentEngine(model="gpt-4o-mini", mode="batch")
+        engine = SentimentEngine(model="test-model", mode="batch")
         wrapped = {
             "comments": [
                 {"comment_id": "c1", "sentiment": 1, "is_relevant": True},
@@ -293,17 +293,17 @@ class TestScoreComments:
             ]
         }
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(wrapped)):
-            scores, _ = engine._score_comments_batch(sample_post)
+            scores, _, _ = engine._score_comments_batch(sample_post)
 
         assert len(scores) == 2
         assert scores[0].sentiment == 1
 
     def test_batch_missing_comment_fills_default(self, sample_post):
         """LLM only returns 1 of 2 comments — missing one gets default."""
-        engine = SentimentEngine(model="gpt-4o-mini", mode="batch")
+        engine = SentimentEngine(model="test-model", mode="batch")
         partial = [{"comment_id": "c1", "sentiment": 2, "is_relevant": True}]
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(partial)):
-            scores, _ = engine._score_comments_batch(sample_post)
+            scores, _, _ = engine._score_comments_batch(sample_post)
 
         assert len(scores) == 2
         c2_score = next(s for s in scores if s.comment_id == "c2")
@@ -311,25 +311,20 @@ class TestScoreComments:
         assert c2_score.is_relevant is True
 
     def test_batch_invalid_sentiment_defaults_to_zero(self, sample_post):
-        engine = SentimentEngine(model="gpt-4o-mini", mode="batch")
+        engine = SentimentEngine(model="test-model", mode="batch")
         response = [
             {"comment_id": "c1", "sentiment": 99, "is_relevant": True},
             {"comment_id": "c2", "sentiment": -2, "is_relevant": False},
         ]
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(response)):
-            scores, _ = engine._score_comments_batch(sample_post)
+            scores, _, _ = engine._score_comments_batch(sample_post)
 
         c1_score = next(s for s in scores if s.comment_id == "c1")
         assert c1_score.sentiment == 0  # invalid -> default
 
     def test_batch_fallback_to_per_comment(self, sample_post):
         """Batch fails, fallback to per_comment mode."""
-        engine = SentimentEngine(model="gpt-4o-mini", mode="batch", fallback_mode=True)
-
-        per_comment_responses = [
-            ({"sentiment": 2, "is_relevant": True}, 0.001),
-            ({"sentiment": -1, "is_relevant": True}, 0.001),
-        ]
+        engine = SentimentEngine(model="test-model", mode="batch", fallback_mode=True)
 
         with patch.object(engine, "_score_comments_batch", side_effect=ValueError("batch failed")):
             with patch.object(engine, "_score_comments_per_comment", return_value=(
@@ -338,26 +333,27 @@ class TestScoreComments:
                     CommentScore(comment_id="c2", sentiment=-1, is_relevant=True),
                 ],
                 0.002,
+                200,
             )):
-                scores, cost = engine._score_comments(sample_post)
+                scores, cost, tokens = engine._score_comments(sample_post)
 
         assert len(scores) == 2
 
     def test_per_comment_happy_path(self, sample_post):
-        engine = SentimentEngine(model="gpt-4o-mini", mode="per_comment")
+        engine = SentimentEngine(model="test-model", mode="per_comment")
         responses = [
-            ({"sentiment": 2, "is_relevant": True}, 0.001),
-            ({"sentiment": -1, "is_relevant": True}, 0.001),
+            ({"sentiment": 2, "is_relevant": True}, 0.001, 100),
+            ({"sentiment": -1, "is_relevant": True}, 0.001, 100),
         ]
         with patch.object(engine, "_call_llm", side_effect=_mock_llm_sequence(responses)):
-            scores, cost = engine._score_comments_per_comment(sample_post)
+            scores, cost, tokens = engine._score_comments_per_comment(sample_post)
 
         assert len(scores) == 2
         assert scores[0].sentiment == 2
         assert scores[1].sentiment == -1
 
     def test_per_comment_failure_uses_default(self, sample_post):
-        engine = SentimentEngine(model="gpt-4o-mini", mode="per_comment")
+        engine = SentimentEngine(model="test-model", mode="per_comment")
         call_count = 0
 
         def _flaky(system, user, image_urls=None):
@@ -365,10 +361,10 @@ class TestScoreComments:
             call_count += 1
             if call_count == 1:
                 raise Exception("API error")
-            return {"sentiment": 1, "is_relevant": True}, 0.001
+            return {"sentiment": 1, "is_relevant": True}, 0.001, 100
 
         with patch.object(engine, "_call_llm", side_effect=_flaky):
-            scores, _ = engine._score_comments_per_comment(sample_post)
+            scores, _, _ = engine._score_comments_per_comment(sample_post)
 
         assert len(scores) == 2
         assert scores[0].sentiment == 0  # default on failure
@@ -466,13 +462,13 @@ class TestAnalyze:
     def test_full_pipeline(
         self, sample_post, mock_post_response, mock_comment_batch_response
     ):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         with patch.object(
             engine,
             "_call_llm",
             side_effect=_mock_llm_sequence([
-                (mock_post_response, 0.001),
-                (mock_comment_batch_response, 0.001),
+                (mock_post_response, 0.001, 100),
+                (mock_comment_batch_response, 0.001, 100),
             ]),
         ):
             scored = engine.analyze(sample_post)
@@ -487,11 +483,11 @@ class TestAnalyze:
         assert "云业务" in scored.quote
         assert len(scored.comment_scores) == 2
         assert scored.n_comments_scored == 2
-        assert scored.model == "gpt-4o-mini"
+        assert scored.model == "test-model"
         assert scored.cost_usd > 0
 
     def test_no_comments(self, empty_comments_post, mock_post_response):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         with patch.object(engine, "_call_llm", side_effect=_mock_llm(mock_post_response)):
             scored = engine.analyze(empty_comments_post)
 
@@ -501,14 +497,14 @@ class TestAnalyze:
         assert scored.sentiment_comments_std == 0.0
 
     def test_with_images(self, post_with_images, mock_post_response, mock_comment_batch_response):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         captured_args = []
 
         def _capture_llm(system, user, image_urls=None):
             captured_args.append({"image_urls": image_urls})
             if len(captured_args) == 1:
-                return mock_post_response, 0.001
-            return mock_comment_batch_response, 0.001
+                return mock_post_response, 0.001, 100
+            return mock_comment_batch_response, 0.001, 100
 
         with patch.object(engine, "_call_llm", side_effect=_capture_llm):
             scored = engine.analyze(post_with_images)
@@ -520,7 +516,7 @@ class TestAnalyze:
     def test_empty_post_returns_defaults(self, sample_post):
         """Post with empty text and no images returns defaults without LLM call."""
         empty_post = sample_post.model_copy(update={"text": "", "image_urls": []})
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         with patch.object(engine, "_call_llm") as mock_llm:
             scored = engine.analyze(empty_post)
 
@@ -533,13 +529,13 @@ class TestAnalyze:
         """Test the module-level analyze() convenience function."""
         with patch.object(SentimentEngine, "_call_llm") as mock_llm:
             mock_llm.side_effect = _mock_llm_sequence([
-                (mock_post_response, 0.001),
-                (mock_comment_batch_response, 0.001),
+                (mock_post_response, 0.001, 100),
+                (mock_comment_batch_response, 0.001, 100),
             ])
-            scored = analyze(sample_post, model="gpt-4o-mini")
+            scored = analyze(sample_post, model="test-model")
 
         assert scored.sentiment_post == 2
-        assert scored.model == "gpt-4o-mini"
+        assert scored.model == "test-model"
 
 
 # ------------------------------------------------------------------ #
@@ -549,13 +545,13 @@ class TestAnalyze:
 
 class TestCostTracking:
     def test_cost_accumulated(self, sample_post, mock_post_response, mock_comment_batch_response):
-        engine = SentimentEngine(model="gpt-4o-mini")
+        engine = SentimentEngine(model="test-model")
         with patch.object(
             engine,
             "_call_llm",
             side_effect=_mock_llm_sequence([
-                (mock_post_response, 0.003),
-                (mock_comment_batch_response, 0.002),
+                (mock_post_response, 0.003, 300),
+                (mock_comment_batch_response, 0.002, 200),
             ]),
         ):
             scored = engine.analyze(sample_post)
@@ -564,19 +560,67 @@ class TestCostTracking:
         assert engine._total_cost_usd == pytest.approx(0.005, abs=0.0001)
 
     def test_cost_tracking_across_posts(self, sample_post, mock_post_response):
-        engine = SentimentEngine(model="gpt-4o-mini")
-        # Use a factory that returns a fresh copy each time to avoid mutation
+        engine = SentimentEngine(model="test-model")
         call_count = 0
         def _cost_llm(system, user, image_urls=None):
             nonlocal call_count
             call_count += 1
             if call_count % 2 == 1:  # odd calls = post scoring
-                return dict(mock_post_response), 0.003
+                return dict(mock_post_response), 0.003, 300
             return [{"comment_id": "c1", "sentiment": 1, "is_relevant": True},
-                     {"comment_id": "c2", "sentiment": 1, "is_relevant": True}], 0.001
+                     {"comment_id": "c2", "sentiment": 1, "is_relevant": True}], 0.001, 100
 
         with patch.object(engine, "_call_llm", side_effect=_cost_llm):
             engine.analyze(sample_post)
             engine.analyze(sample_post)
 
         assert engine._total_cost_usd == pytest.approx(0.008, abs=0.0001)
+
+    def test_token_tracking(self, sample_post, mock_post_response, mock_comment_batch_response):
+        engine = SentimentEngine(model="test-model")
+        with patch.object(
+            engine,
+            "_call_llm",
+            side_effect=_mock_llm_sequence([
+                (mock_post_response, 0.001, 150),
+                (mock_comment_batch_response, 0.001, 200),
+            ]),
+        ):
+            engine.analyze(sample_post)
+
+        assert engine._total_tokens == 350
+
+
+# ------------------------------------------------------------------ #
+# Tests: Config via env vars
+# ------------------------------------------------------------------ #
+
+
+class TestEnvVarConfig:
+    def test_model_from_env(self, monkeypatch):
+        monkeypatch.setenv("LLM_MODEL", "custom-model")
+        engine = SentimentEngine()
+        assert engine.model == "custom-model"
+
+    def test_base_url_from_env(self, monkeypatch):
+        monkeypatch.setenv("LLM_BASE_URL", "https://custom.api.com/v1")
+        engine = SentimentEngine()
+        assert engine.base_url == "https://custom.api.com/v1"
+
+    def test_api_key_from_env(self, monkeypatch):
+        monkeypatch.setenv("LLM_API_KEY", "sk-test-123")
+        engine = SentimentEngine()
+        assert engine.api_key == "sk-test-123"
+
+    def test_constructor_overrides_env(self, monkeypatch):
+        monkeypatch.setenv("LLM_MODEL", "env-model")
+        engine = SentimentEngine(model="constructor-model")
+        assert engine.model == "constructor-model"
+
+    def test_default_model(self):
+        engine = SentimentEngine()
+        assert engine.model == "mimo-v2.5-pro"
+
+    def test_default_base_url(self):
+        engine = SentimentEngine()
+        assert engine.base_url == "https://token-plan-cn.xiaomimimo.com/v1"

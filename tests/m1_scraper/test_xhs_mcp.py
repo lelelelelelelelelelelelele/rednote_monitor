@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.scraper.xhs_mcp import XhsMcpScraper
+from src.m1_scraper.xhs_mcp import XhsMcpScraper
 
 
 # ------------------------------------------------------------------ #
@@ -236,9 +236,9 @@ def test_save_to_manual(scraper, tmp_manual_dir):
 @pytest.mark.asyncio
 async def test_fallback_to_manual(tmp_path):
     """测试降级到 ManualScraper。"""
-    from src.scraper.manual import ManualScraper
-    from src.scraper.fallback import FallbackScraper
-    from src.scraper.xhs_mcp import XhsMcpScraper
+    from src.m1_scraper.manual import ManualScraper
+    from src.m1_scraper.fallback import FallbackScraper
+    from src.m1_scraper.xhs_mcp import XhsMcpScraper
 
     manual_dir = tmp_path / "manual"
     manual_dir.mkdir()

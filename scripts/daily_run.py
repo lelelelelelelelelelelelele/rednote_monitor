@@ -10,16 +10,17 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 from datetime import date
 from pathlib import Path
 
 import yaml
 
-from src.scraper.manual import ManualScraper
-from src.scraper.xhs_mcp import XhsMcpScraper
-from src.scraper.fallback import FallbackScraper
-from src.scraper.monitor import KeywordMonitor
+from src.m1_scraper.manual import ManualScraper
+from src.m1_scraper.xhs_mcp import XhsMcpScraper
+from src.m1_scraper.fallback import FallbackScraper
+from src.m0_monitor import KeywordMonitor
 from src.models import RawPost, ScoredPost
 
 logging.basicConfig(
@@ -97,14 +98,14 @@ def run_m2(
     all_posts: dict[str, list[RawPost]],
     target_date: date,
     monitor: KeywordMonitor | None = None,
-    model: str = "gpt-4o-mini",
+    model: str = "mimo-v2.5-pro",
 ) -> dict[str, list[ScoredPost]]:
     """M2: 情绪打分。使用 LLM 对每条帖子 + 评论区进行多模态情绪分析。
 
     返回 {watchlist_id: [ScoredPost, ...]}
     写入 data/scored/{date}_{watchlist_id}.jsonl
     """
-    from src.sentiment import SentimentEngine
+    from src.m2_sentiment import SentimentEngine
 
     engine = SentimentEngine(model=model)
     all_scored: dict[str, list[ScoredPost]] = {}
@@ -153,12 +154,23 @@ def run_m2(
     return all_scored
 
 
-def run_m3_placeholder(target_date: date) -> None:
-    """M3: 日度聚合写入 SQLite (待实现)。"""
-    logger.info(f"[M3] Placeholder — aggregate {target_date} to SQLite (not implemented yet)")
+def run_m3(all_scored: dict[str, list[ScoredPost]], target_date: date, db_path: str = "data/metrics.db") -> None:
+    """M3: 日度聚合写入 SQLite。"""
+    from src.m3_aggregate import DailyAggregator
+
+    aggregator = DailyAggregator(db_path=db_path)
+
+    for watchlist_id, scored_posts in all_scored.items():
+        logger.info(f"[M3] Aggregating watchlist={watchlist_id!r} ({len(scored_posts)} scored posts)")
+        metric = aggregator.aggregate(scored_posts, target_date=target_date)
+        logger.info(
+            f"[M3] -> n_posts={metric.n_posts} "
+            f"sentiment_combined={metric.sentiment_combined:+.4f} "
+            f"top_quotes={json.loads(metric.top_quotes_json)}"
+        )
 
 
-async def main_async(target_date: date, mcp_url: str, model: str = "gpt-4o-mini") -> None:
+async def main_async(target_date: date, mcp_url: str, model: str = "mimo-v2.5-pro") -> None:
     watchlist = load_watchlist()
     if not watchlist:
         logger.warning("No enabled watchlist entries. Check config/watchlist.yaml")
@@ -174,8 +186,8 @@ async def main_async(target_date: date, mcp_url: str, model: str = "gpt-4o-mini"
     monitor = KeywordMonitor(threshold=0.5)
     all_scored = run_m2(all_posts, target_date, monitor=monitor, model=model)
 
-    # M3 (placeholder)
-    run_m3_placeholder(target_date)
+    # M3
+    run_m3(all_scored, target_date)
 
     # KeywordMonitor summary
     alerts = monitor.check_and_alert()
@@ -202,8 +214,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        default="gpt-4o-mini",
-        help="LLM model for sentiment scoring (default: gpt-4o-mini)",
+        default="mimo-v2.5-pro",
+        help="LLM model for sentiment scoring (default: mimo-v2.5-pro)",
     )
     args = parser.parse_args()
 

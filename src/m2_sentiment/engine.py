@@ -12,24 +12,58 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from pathlib import Path
 from typing import Any, Literal
 
-import litellm
+import httpx
 
 from ..models import CommentScore, RawPost, ScoredPost, SentimentScore
 from .prompts import PromptTemplates
 
 logger = logging.getLogger(__name__)
 
-# Suppress litellm's verbose logging
-litellm.suppress_debug_info = True
+# Default config — overridable via env vars
+_DEFAULT_BASE_URL = "https://token-plan-cn.xiaomimimo.com/v1"
+_DEFAULT_MODEL = "mimo-v2.5-pro"
 
 
 def _strip_markdown_fences(text: str) -> str:
-    """Strip ```json ... ``` markdown fences from LLM output."""
-    return re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+    """Strip ```json ... ``` markdown fences from LLM output.
+
+    Also handles:
+    - Reasoning model outputs that may contain thinking text before JSON
+    - JSON Lines format (one JSON object per line) -> converts to JSON array
+    """
+    text = text.strip()
+    # Remove markdown fences
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
+
+    # Try to find JSON object or array in the text
+    for i, ch in enumerate(text):
+        if ch in ('{', '['):
+            candidate = text[i:]
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                pass
+
+    # Handle JSON Lines: multiple JSON objects separated by newlines
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    objects = []
+    for line in lines:
+        try:
+            obj = json.loads(line)
+            objects.append(obj)
+        except json.JSONDecodeError:
+            continue
+
+    if objects:
+        return json.dumps(objects, ensure_ascii=False)
+
+    return text
 
 
 def _safe_int(value: Any, valid: set[int], default: int = 0) -> int:
@@ -55,18 +89,23 @@ class SentimentEngine:
 
     def __init__(
         self,
-        model: str = "gpt-4o-mini",
+        model: str | None = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
         prompts_path: str | Path = "config/prompts.yaml",
         mode: Literal["batch", "per_comment"] = "batch",
         max_retries: int = 2,
         fallback_mode: bool = True,
     ):
-        self.model = model
+        self.model = model or os.environ.get("LLM_MODEL", _DEFAULT_MODEL)
+        self.base_url = (base_url or os.environ.get("LLM_BASE_URL", _DEFAULT_BASE_URL)).rstrip("/")
+        self.api_key = api_key or os.environ.get("LLM_API_KEY", "")
         self.mode = mode
         self.max_retries = max_retries
         self.fallback_mode = fallback_mode
         self.prompts = PromptTemplates(Path(prompts_path))
         self._total_cost_usd: float = 0.0
+        self._total_tokens: int = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -80,13 +119,14 @@ class SentimentEngine:
             return self._default_scored_post(post)
 
         # Phase 1: Score post body
-        post_result, post_cost = self._score_post(post)
+        post_result, post_cost, post_tokens = self._score_post(post)
 
         # Phase 2: Score comments
         comment_scores: list[CommentScore] = []
         comments_cost = 0.0
+        comments_tokens = 0
         if post.comments:
-            comment_scores, comments_cost = self._score_comments(post)
+            comment_scores, comments_cost, comments_tokens = self._score_comments(post)
 
         # Phase 3: Client-side aggregation
         n_comments_scored, avg, std = self._aggregate_comments(
@@ -94,7 +134,9 @@ class SentimentEngine:
         )
 
         total_cost = post_cost + comments_cost
+        total_tokens = post_tokens + comments_tokens
         self._total_cost_usd += total_cost
+        self._total_tokens += total_tokens
 
         return ScoredPost(
             post_id=post.post_id,
@@ -117,8 +159,8 @@ class SentimentEngine:
     # Phase 1: Post scoring
     # ------------------------------------------------------------------
 
-    def _score_post(self, post: RawPost) -> tuple[dict, float]:
-        """Score the post body (text + images). Returns (result_dict, cost_usd)."""
+    def _score_post(self, post: RawPost) -> tuple[dict, float, int]:
+        """Score the post body (text + images). Returns (result_dict, cost_usd, tokens)."""
         system, user = self.prompts.render_post_sentiment(
             keyword=post.keyword,
             text=post.text,
@@ -129,15 +171,16 @@ class SentimentEngine:
         )
 
         last_cost = 0.0
+        last_tokens = 0
         for attempt in range(self.max_retries + 1):
             try:
-                result, cost = self._call_llm(
+                result, cost, tokens = self._call_llm(
                     system, user, image_urls=post.image_urls or None
                 )
                 last_cost = cost
+                last_tokens = tokens
                 self._validate_post_result(result)
-                result["_cost_usd"] = cost
-                return result, cost
+                return result, cost, tokens
             except (json.JSONDecodeError, KeyError, ValueError) as e:
                 logger.warning(f"[M2] Post {post.post_id} attempt {attempt + 1} failed: {e}")
                 if attempt == self.max_retries:
@@ -147,9 +190,9 @@ class SentimentEngine:
                         "sentiment": 0,
                         "fomo": 0,
                         "quote": "",
-                    }, last_cost
+                    }, last_cost, last_tokens
 
-        return {"is_relevant": True, "sentiment": 0, "fomo": 0, "quote": ""}, last_cost
+        return {"is_relevant": True, "sentiment": 0, "fomo": 0, "quote": ""}, last_cost, last_tokens
 
     def _validate_post_result(self, result: dict) -> None:
         """Validate LLM output for post scoring."""
@@ -182,8 +225,8 @@ class SentimentEngine:
     # Phase 2: Comment scoring
     # ------------------------------------------------------------------
 
-    def _score_comments(self, post: RawPost) -> tuple[list[CommentScore], float]:
-        """Score all comments. Returns (comment_scores, total_cost_usd)."""
+    def _score_comments(self, post: RawPost) -> tuple[list[CommentScore], float, int]:
+        """Score all comments. Returns (comment_scores, total_cost_usd, total_tokens)."""
         if self.mode == "batch":
             try:
                 return self._score_comments_batch(post)
@@ -197,7 +240,7 @@ class SentimentEngine:
                 raise
         return self._score_comments_per_comment(post)
 
-    def _score_comments_batch(self, post: RawPost) -> tuple[list[CommentScore], float]:
+    def _score_comments_batch(self, post: RawPost) -> tuple[list[CommentScore], float, int]:
         """Batch approach: all comments in one LLM call."""
         comments_payload = [
             {"comment_id": c.comment_id, "text": c.text, "n_likes": c.n_likes}
@@ -211,12 +254,14 @@ class SentimentEngine:
         )
 
         last_cost = 0.0
+        last_tokens = 0
         for attempt in range(self.max_retries + 1):
             try:
-                result, cost = self._call_llm(system, user)
+                result, cost, tokens = self._call_llm(system, user)
                 last_cost = cost
+                last_tokens = tokens
                 scores = self._parse_comment_batch(result, post.comments)
-                return scores, cost
+                return scores, cost, tokens
             except (json.JSONDecodeError, ValueError) as e:
                 logger.warning(
                     f"[M2] Comment batch for post {post.post_id} attempt {attempt + 1}: {e}"
@@ -224,7 +269,7 @@ class SentimentEngine:
                 if attempt == self.max_retries:
                     raise
 
-        return [], last_cost
+        return [], last_cost, last_tokens
 
     def _parse_comment_batch(
         self, result: Any, original_comments: list
@@ -232,7 +277,16 @@ class SentimentEngine:
         """Parse and validate batch comment LLM output."""
         # Handle if LLM wraps in {"comments": [...]}
         if isinstance(result, dict):
-            result = result.get("comments", result.get("data", []))
+            # Check if it's a wrapper object
+            if "comments" in result:
+                result = result["comments"]
+            elif "data" in result:
+                result = result["data"]
+            # Check if it's a single comment object (has comment_id key)
+            elif "comment_id" in result:
+                result = [result]
+            else:
+                result = []
 
         if not isinstance(result, list):
             raise ValueError(f"Expected list, got {type(result)}")
@@ -273,10 +327,11 @@ class SentimentEngine:
 
     def _score_comments_per_comment(
         self, post: RawPost
-    ) -> tuple[list[CommentScore], float]:
+    ) -> tuple[list[CommentScore], float, int]:
         """Approach A: one LLM call per comment. Used as fallback or primary."""
         scores: list[CommentScore] = []
         total_cost = 0.0
+        total_tokens = 0
 
         for comment in post.comments:
             system, user = self.prompts.render_per_comment(
@@ -285,8 +340,9 @@ class SentimentEngine:
                 comment_text=comment.text,
             )
             try:
-                result, cost = self._call_llm(system, user)
+                result, cost, tokens = self._call_llm(system, user)
                 total_cost += cost
+                total_tokens += tokens
                 sent = _safe_int(result.get("sentiment"), {-2, -1, 0, 1, 2}, default=0)
                 scores.append(
                     CommentScore(
@@ -305,7 +361,7 @@ class SentimentEngine:
                     )
                 )
 
-        return scores, total_cost
+        return scores, total_cost, total_tokens
 
     # ------------------------------------------------------------------
     # Phase 3: Client-side aggregation
@@ -351,7 +407,7 @@ class SentimentEngine:
         return n_scored, round(avg, 4), round(std, 4)
 
     # ------------------------------------------------------------------
-    # LLM call
+    # LLM call (OpenAI-compatible API via httpx)
     # ------------------------------------------------------------------
 
     def _call_llm(
@@ -359,8 +415,8 @@ class SentimentEngine:
         system: str,
         user: str,
         image_urls: list[str] | None = None,
-    ) -> tuple[Any, float]:
-        """Call LLM via litellm. Returns (parsed_json_response, cost_usd).
+    ) -> tuple[Any, float, int]:
+        """Call LLM via OpenAI-compatible API. Returns (parsed_json_response, cost_usd, total_tokens).
 
         For multimodal posts, image_urls are included as image_url content parts.
         """
@@ -377,31 +433,48 @@ class SentimentEngine:
         else:
             messages.append({"role": "user", "content": user})
 
-        response = litellm.completion(
-            model=self.model,
-            messages=messages,
-            temperature=0.1,
-            response_format={"type": "json_object"},
-        )
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
-        # Extract cost
-        cost = 0.0
-        try:
-            cost = litellm.completion_cost(
-                model=self.model,
-                prompt=str(messages),
-                completion=response.choices[0].message.content or "",
-            )
-        except Exception:
-            pass  # Cost calculation is best-effort
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"},
+        }
 
-        raw_text = response.choices[0].message.content or ""
+        url = f"{self.base_url}/chat/completions"
+
+        with httpx.Client(timeout=120) as client:
+            response = client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+
+        data = response.json()
+
+        # Extract usage
+        usage = data.get("usage", {})
+        total_tokens = usage.get("total_tokens", 0)
+
+        # Estimate cost: use a simple per-token estimate if model pricing unknown
+        prompt_tokens = usage.get("prompt_tokens", 0)
+        completion_tokens = usage.get("completion_tokens", 0)
+        cost = self._estimate_cost(prompt_tokens, completion_tokens)
+
+        raw_text = data["choices"][0]["message"]["content"] or ""
 
         # Strip markdown fences that some models add
         cleaned = _strip_markdown_fences(raw_text)
         parsed = json.loads(cleaned)
 
-        return parsed, cost
+        return parsed, cost, total_tokens
+
+    def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """Estimate cost in USD. Override for specific model pricing."""
+        # Generic estimate: ~$0.15/M input, $0.60/M output (typical for mid-tier models)
+        return (prompt_tokens * 0.15 + completion_tokens * 0.60) / 1_000_000
 
     # ------------------------------------------------------------------
     # Helpers
@@ -430,13 +503,13 @@ class SentimentEngine:
 def analyze(
     post: RawPost,
     *,
-    model: str = "gpt-4o-mini",
+    model: str | None = None,
     mode: Literal["batch", "per_comment"] = "batch",
 ) -> ScoredPost:
     """Module-level convenience function matching BLUEPRINT interface.
 
     Usage:
-        from src.sentiment import analyze
+        from src.m2_sentiment import analyze
         scored = analyze(raw_post)
     """
     engine = SentimentEngine(model=model, mode=mode)
