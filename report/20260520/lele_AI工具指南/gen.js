@@ -42,7 +42,7 @@ s1.addText("AI 工具使用指南", {
 });
 
 // 副标题
-s1.addText("Git · CC Usage · PPT 技能分享", {
+s1.addText("让团队少烧时间，多攒判断", {
   x: 0.8, y: 2.6, w: 8.4, h: 0.5,
   fontSize: 22, color: ICE_BLUE, fontFace: "Arial",
   margin: 0
@@ -62,7 +62,7 @@ s1.addShape(pres.shapes.RECTANGLE, {
 });
 
 // ============================================
-// 第 2 页 | 为什么写这份指南
+// 第 2 页 | 这份指南讲什么（目录 + 动机）
 // ============================================
 let s2 = pres.addSlide();
 s2.background = { color: WHITE };
@@ -72,37 +72,82 @@ s2.addShape(pres.shapes.RECTANGLE, {
   fill: { color: NAVY }
 });
 
-s2.addText("为什么写这份指南", {
-  x: 0.6, y: 0.4, w: 8.8, h: 0.6,
-  fontSize: 32, bold: true, color: NAVY, fontFace: "Arial",
-  margin: 0
+s2.addText("这份指南讲什么", {
+  x: 0.6, y: 0.3, w: 8.8, h: 0.55,
+  fontSize: 30, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s2.addText("工具用对了，时间就花在判断和设计上，不在重复劳动上", {
+  x: 0.6, y: 0.85, w: 8.8, h: 0.35,
+  fontSize: 13, color: SLATE, fontFace: "Arial", margin: 0
 });
 
-// 左：团队现状
-s2.addShape(pres.shapes.RECTANGLE, {
-  x: 0.6, y: 1.3, w: 4.2, h: 2.0,
-  fill: { color: LIGHT_BG },
-  line: { color: ICE_BLUE, width: 1.5 }
-});
-s2.addText([
-  { text: "团队现状", options: { bold: true, color: NAVY, breakLine: true } },
-  { text: "· 3 人协作，项目节奏快", options: { color: "475569", breakLine: true } },
-  { text: "· 部分同学较少接触 AI 工具", options: { color: "475569", breakLine: true } },
-  { text: "· 用好工具 = 把时间花在判断上", options: { color: "475569" } }
-], { x: 0.8, y: 1.5, w: 3.8, h: 1.6, fontSize: 13, margin: 0 });
+// 6 张卡片（2 行 × 3 列）
+const tocCards = [
+  { num: "1", title: "Git 工作流",       desc: "命令集 + 分支规则 + PR",     color: "0D9488", page: "p3-6" },
+  { num: "2", title: "DevSidecar",       desc: "GitHub timeout？一键加速",   color: "F59E0B", page: "p7" },
+  { num: "3", title: "GitHub PR 扩展",   desc: "VSCode 里直接 review PR",    color: "DC2626", page: "p8" },
+  { num: "4", title: "CC Usage",         desc: "知道 Token 烧在哪",          color: "2563EB", page: "p9-10" },
+  { num: "5", title: "pptx skill",       desc: "让 AI 写 PPT 代码",          color: "7C3AED", page: "p11-13" },
+  { num: "6", title: "AI 提示词速查",    desc: "给 Claude Code 的真实工作流", color: "EC4899", page: "p14" }
+];
 
-// 右：三个核心场景
-s2.addShape(pres.shapes.RECTANGLE, {
-  x: 5.2, y: 1.3, w: 4.2, h: 2.0,
-  fill: { color: LIGHT_BG },
-  line: { color: ICE_BLUE, width: 1.5 }
+const cardW = 2.85;
+const cardH = 1.85;
+const gapX = 0.05;
+const gapY = 0.15;
+const startX = 0.6;
+const startY = 1.45;
+
+tocCards.forEach((c, i) => {
+  const col = i % 3;
+  const row = Math.floor(i / 3);
+  const cx = startX + col * (cardW + gapX);
+  const cy = startY + row * (cardH + gapY);
+
+  // 卡片底
+  s2.addShape(pres.shapes.RECTANGLE, {
+    x: cx, y: cy, w: cardW, h: cardH,
+    fill: { color: LIGHT_BG },
+    line: { color: "E2E8F0", width: 1 },
+    shadow: makeShadow()
+  });
+
+  // 顶部色条
+  s2.addShape(pres.shapes.RECTANGLE, {
+    x: cx, y: cy, w: cardW, h: 0.08,
+    fill: { color: c.color }
+  });
+
+  // 编号圆
+  s2.addShape(pres.shapes.OVAL, {
+    x: cx + 0.2, y: cy + 0.28, w: 0.5, h: 0.5,
+    fill: { color: c.color }
+  });
+  s2.addText(c.num, {
+    x: cx + 0.2, y: cy + 0.28, w: 0.5, h: 0.5,
+    fontSize: 18, bold: true, color: WHITE,
+    align: "center", valign: "middle", fontFace: "Arial", margin: 0
+  });
+
+  // 标题
+  s2.addText(c.title, {
+    x: cx + 0.8, y: cy + 0.32, w: cardW - 0.9, h: 0.35,
+    fontSize: 14, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+  });
+
+  // 描述
+  s2.addText(c.desc, {
+    x: cx + 0.2, y: cy + 0.95, w: cardW - 0.4, h: 0.6,
+    fontSize: 11, color: "475569", fontFace: "Arial", margin: 0
+  });
+
+  // 底部页码提示
+  s2.addText(c.page, {
+    x: cx + 0.2, y: cy + cardH - 0.32, w: cardW - 0.4, h: 0.22,
+    fontSize: 9, color: SLATE, fontFace: "Consolas",
+    align: "right", margin: 0
+  });
 });
-s2.addText([
-  { text: "三个核心场景", options: { bold: true, color: NAVY, breakLine: true } },
-  { text: "1. Git — 代码协作不炸", options: { color: "475569", breakLine: true } },
-  { text: "2. CC Usage — 花明白钱", options: { color: "475569", breakLine: true } },
-  { text: "3. AI 做 PPT — 汇报快速产出", options: { color: "475569" } }
-], { x: 5.4, y: 1.5, w: 3.8, h: 1.6, fontSize: 13, margin: 0 });
 
 // ============================================
 // 第 3 页 | Git（1/3）为什么必须学
@@ -119,7 +164,7 @@ s3.addText("Git 极简工作流", {
   x: 0.6, y: 0.35, w: 8.8, h: 0.6,
   fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
 });
-s3.addText("（1/3）为什么必须学", {
+s3.addText("（1/4）为什么必须学", {
   x: 0.6, y: 0.9, w: 8.8, h: 0.35,
   fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
 });
@@ -165,7 +210,7 @@ s4.addText("Git 极简工作流", {
   x: 0.6, y: 0.35, w: 8.8, h: 0.6,
   fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
 });
-s4.addText("（2/3）5 个够用命令", {
+s4.addText("（2/4）5 个够用命令", {
   x: 0.6, y: 0.9, w: 8.8, h: 0.35,
   fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
 });
@@ -243,7 +288,7 @@ s5.addText("Git 极简工作流", {
   x: 0.6, y: 0.35, w: 8.8, h: 0.6,
   fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
 });
-s5.addText("（3/3）分支规则和常见坑", {
+s5.addText("（3/4）分支规则和常见坑", {
   x: 0.6, y: 0.9, w: 8.8, h: 0.35,
   fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
 });
@@ -303,6 +348,109 @@ s5.addTable([
 });
 
 // ============================================
+// 第 5.4 页 | Git（4/4）Pull Request 工作流
+// ============================================
+let s5_4 = pres.addSlide();
+s5_4.background = { color: WHITE };
+
+s5_4.addShape(pres.shapes.RECTANGLE, {
+  x: 0, y: 0, w: 0.15, h: 5.625,
+  fill: { color: NAVY }
+});
+
+s5_4.addText("Git 极简工作流", {
+  x: 0.6, y: 0.35, w: 8.8, h: 0.6,
+  fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s5_4.addText("（4/4）Pull Request 工作流", {
+  x: 0.6, y: 0.9, w: 8.8, h: 0.35,
+  fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
+});
+
+// 顶部：为什么不能直推 main
+s5_4.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 1.35, w: 8.8, h: 0.55,
+  fill: { color: LIGHT_BG },
+  line: { color: ICE_BLUE, width: 1 }
+});
+s5_4.addText([
+  { text: "为什么走 PR：", options: { bold: true, color: NAVY } },
+  { text: "不直推 main（改坏全员炸）+ 一次 review 机会 + 改动留痕", options: { color: "475569" } }
+], { x: 0.8, y: 1.4, w: 8.4, h: 0.45, fontSize: 12, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// 左：网页方式
+s5_4.addText("方式 A：网页（推荐新手）", {
+  x: 0.6, y: 2.05, w: 4.3, h: 0.3,
+  fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+const webSteps = [
+  "1. push 完去 GitHub 首页",
+  "2. 黄色横条 \"Compare & pull request\"",
+  "3. 模板自动加载，填 4 个问题",
+  "4. Create → Merge → 本地 git pull"
+];
+webSteps.forEach((s, i) => {
+  s5_4.addText(s, {
+    x: 0.6, y: 2.4 + i * 0.28, w: 4.3, h: 0.26,
+    fontSize: 11, color: "475569", fontFace: "Arial", margin: 0
+  });
+});
+
+// 右：gh CLI 代码块
+s5_4.addText("方式 B：gh CLI（更快）", {
+  x: 5.1, y: 2.05, w: 4.3, h: 0.3,
+  fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s5_4.addShape(pres.shapes.RECTANGLE, {
+  x: 5.1, y: 2.4, w: 4.3, h: 1.15,
+  fill: { color: "1E293B" }
+});
+s5_4.addText([
+  { text: "# 自动用模板",       options: { color: "64748B", breakLine: true } },
+  { text: "gh pr create",        options: { color: "A5B4FC", breakLine: true } },
+  { text: "gh pr view --web",    options: { color: "A5B4FC", breakLine: true } },
+  { text: "gh pr merge --squash", options: { color: "A5B4FC" } }
+], {
+  x: 5.25, y: 2.5, w: 4.0, h: 1.0,
+  fontSize: 10, fontFace: "Consolas", margin: 0
+});
+
+// 下：本项目 4 问模板
+s5_4.addText("本项目 PR 模板的 4 个问题", {
+  x: 0.6, y: 3.7, w: 8.8, h: 0.3,
+  fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+const fourQs = [
+  { n: "1", t: "改了什么", d: "模块 + 文件 + 一句话目的" },
+  { n: "2", t: "Happy path", d: "跑过没？贴 1 行输出" },
+  { n: "3", t: "核心文件", d: "动过 4 个受保护文件没？" },
+  { n: "4", t: "pyproject", d: "加依赖没？列包名 + 原因" }
+];
+fourQs.forEach((q, i) => {
+  const qx = 0.6 + i * 2.2;
+  s5_4.addShape(pres.shapes.RECTANGLE, {
+    x: qx, y: 4.05, w: 2.1, h: 0.7,
+    fill: { color: LIGHT_BG },
+    line: { color: ICE_BLUE, width: 1 }
+  });
+  s5_4.addText([
+    { text: q.n + ". " + q.t, options: { bold: true, color: NAVY, breakLine: true } },
+    { text: q.d, options: { color: "475569" } }
+  ], { x: qx + 0.1, y: 4.1, w: 1.9, h: 0.6, fontSize: 10, margin: 0 });
+});
+
+// 红线：核心文件 cross-check 提示
+s5_4.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 4.9, w: 8.8, h: 0.55,
+  fill: { color: "FEF2F2" },
+  line: { color: "DC2626", width: 1.2 }
+});
+s5_4.addText([
+  { text: "红线：", options: { bold: true, color: "DC2626" } },
+  { text: "改 models.py / prompts.yaml / watchlist.yaml / daily_run.py → 群里 +1，CODEOWNERS 强制 cross-check", options: { color: "991B1B" } }
+], { x: 0.8, y: 4.95, w: 8.4, h: 0.45, fontSize: 10, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// ============================================
 // 第 5.5 页 | 实用工具推荐：DevSidecar
 // ============================================
 let s5_5 = pres.addSlide();
@@ -360,6 +508,68 @@ s5_5.addShape(pres.shapes.RECTANGLE, {
   line: { color: ICE_BLUE, width: 1 }
 });
 s5_5.addText("适用：git clone 大型仓库、pip/npm install、GitHub Release 下载", {
+  x: 0.8, y: 4.85, w: 8.4, h: 0.5,
+  fontSize: 11, color: SLATE, fontFace: "Arial", valign: "middle"
+});
+
+// ============================================
+// 第 5.6 页 | 实用工具推荐：GitHub Pull Requests
+// ============================================
+let s5_6 = pres.addSlide();
+s5_6.background = { color: WHITE };
+
+s5_6.addShape(pres.shapes.RECTANGLE, {
+  x: 0, y: 0, w: 0.15, h: 5.625,
+  fill: { color: NAVY }
+});
+
+s5_6.addText("实用工具推荐", {
+  x: 0.6, y: 0.35, w: 8.8, h: 0.6,
+  fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s5_6.addText("GitHub Pull Requests — 在 VSCode 里搞定 PR", {
+  x: 0.6, y: 0.9, w: 8.8, h: 0.35,
+  fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
+});
+
+// 问题描述框
+s5_6.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 1.5, w: 8.8, h: 0.8,
+  fill: { color: "FEF3C7" },
+  line: { color: "F59E0B", width: 1 }
+});
+s5_6.addText("问题：在 GitHub 网页和编辑器之间来回切换看 PR、写评论，效率低", {
+  x: 0.8, y: 1.6, w: 8.4, h: 0.6,
+  fontSize: 12, color: "92400E", fontFace: "Arial", valign: "middle"
+});
+
+// 特点列表
+s5_6.addText("特点", {
+  x: 0.6, y: 2.5, w: 8.8, h: 0.35,
+  fontSize: 14, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+
+s5_6.addText([
+  { text: "• ", options: { color: NAVY } },
+  { text: "VSCode 官方扩展（微软 / GitHub 出品），侧边栏直接看 PR / Issue 列表", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "在编辑器里 review 代码、写行内评论、resolve conversation", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "一键 checkout 别人的 PR 分支，调完直接 push", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "PR 评论实时弹通知，自动识别 pull_request_template.md", options: { color: "334155" } }
+], {
+  x: 0.6, y: 2.9, w: 8.8, h: 1.8,
+  fontSize: 12, fontFace: "Arial", lineSpacing: 22
+});
+
+// 适用场景
+s5_6.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 4.8, w: 8.8, h: 0.6,
+  fill: { color: LIGHT_BG },
+  line: { color: ICE_BLUE, width: 1 }
+});
+s5_6.addText("适用：日常 review 同事 PR、起 PR 填模板、处理 review comments", {
   x: 0.8, y: 4.85, w: 8.4, h: 0.5,
   fontSize: 11, color: SLATE, fontFace: "Arial", valign: "middle"
 });
@@ -572,7 +782,7 @@ s9.addText("（2/2）实操步骤", {
 const pptSteps = [
   { step: "Step 1", title: "生成大纲", body: "给 AI 主题 + 受众 + 页数 + 风格\nAI 输出结构化的每页标题和要点" },
   { step: "Step 2", title: "扩写内容", body: "把大纲每页丢给 AI\n要求扩写成 bullet points" },
-  { step: "Step 3", title: "生成 PPT 文件", body: "· Claude Code 的 pptx skill 直接生成 .pptx\n· 或在线工具（Gamma、Tome）导入 Markdown" },
+  { step: "Step 3", title: "生成 PPT 文件", body: "· Claude Code pptx skill（推荐，下页详讲）\n· 或在线工具（Gamma、Tome）导入 Markdown" },
   { step: "Step 4", title: "人工润色", body: "· AI 生成的是骨架，数据必须自己核对\n· 关键结论和数字，人工 double-check\n· 配色和字体按公司规范调整" }
 ];
 
@@ -616,6 +826,236 @@ pptSteps.forEach((s, i) => {
 });
 
 // ============================================
+// 第 9.5 页 | 重点：Claude Code 的 pptx skill
+// ============================================
+let s9_5 = pres.addSlide();
+s9_5.background = { color: WHITE };
+
+s9_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0, y: 0, w: 0.15, h: 5.625,
+  fill: { color: NAVY }
+});
+
+s9_5.addText("重点：pptx skill", {
+  x: 0.6, y: 0.3, w: 8.8, h: 0.55,
+  fontSize: 30, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s9_5.addText("Claude Code 内置技能，代码即 PPT", {
+  x: 0.6, y: 0.85, w: 8.8, h: 0.35,
+  fontSize: 13, color: SLATE, fontFace: "Arial", margin: 0
+});
+
+// Meta 提示框（紫色 callout）
+s9_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 1.3, w: 8.8, h: 0.55,
+  fill: { color: "F5F3FF" },
+  line: { color: "7C3AED", width: 1.5 }
+});
+s9_5.addText([
+  { text: "💡 ", options: { color: "7C3AED" } },
+  { text: "Meta：你现在看的这份 PPT，就是 pptx skill 生成的", options: { bold: true, color: "5B21B6" } }
+], { x: 0.8, y: 1.35, w: 8.4, h: 0.45, fontSize: 13, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// 左：工作流 4 步
+s9_5.addText("工作流（4 步全自动）", {
+  x: 0.6, y: 2.0, w: 4.3, h: 0.3,
+  fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+
+const flow = [
+  { n: "1", t: "outline.md", d: "文字大纲（自己写或 AI 先写）" },
+  { n: "2", t: "gen.js",     d: "Claude 写 pptxgenjs 代码" },
+  { n: "3", t: "node gen.js", d: "输出 .pptx" },
+  { n: "4", t: "convert→pdf", d: "PowerShell 一键转 PDF" }
+];
+flow.forEach((f, i) => {
+  const fy = 2.4 + i * 0.55;
+  s9_5.addShape(pres.shapes.OVAL, {
+    x: 0.6, y: fy, w: 0.3, h: 0.3,
+    fill: { color: "7C3AED" }
+  });
+  s9_5.addText(f.n, {
+    x: 0.6, y: fy, w: 0.3, h: 0.3,
+    fontSize: 11, bold: true, color: WHITE,
+    align: "center", valign: "middle", fontFace: "Arial", margin: 0
+  });
+  s9_5.addText(f.t, {
+    x: 1.0, y: fy, w: 1.6, h: 0.28,
+    fontSize: 12, bold: true, color: NAVY, fontFace: "Consolas", margin: 0
+  });
+  s9_5.addText(f.d, {
+    x: 2.7, y: fy, w: 2.3, h: 0.28,
+    fontSize: 11, color: "475569", fontFace: "Arial", margin: 0
+  });
+});
+
+// 触发方式（左下）
+s9_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 4.85, w: 4.3, h: 0.55,
+  fill: { color: LIGHT_BG },
+  line: { color: ICE_BLUE, width: 1 }
+});
+s9_5.addText([
+  { text: "触发：", options: { bold: true, color: NAVY } },
+  { text: "对话里说\"帮我做份 XX 主题的 PPT\"  或  /pptx", options: { color: "475569" } }
+], { x: 0.75, y: 4.9, w: 4.0, h: 0.45, fontSize: 11, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// 右：vs Gamma/Tome 对比表
+s9_5.addText("和 Gamma / Tome 比", {
+  x: 5.1, y: 2.0, w: 4.3, h: 0.3,
+  fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+
+s9_5.addTable([
+  [
+    { text: "维度", options: { bold: true, fill: { color: NAVY }, color: WHITE, align: "center" } },
+    { text: "Gamma/Tome", options: { bold: true, fill: { color: NAVY }, color: WHITE, align: "center" } },
+    { text: "pptx skill", options: { bold: true, fill: { color: "7C3AED" }, color: WHITE, align: "center" } }
+  ],
+  ["输出",    "在线网页",        ".pptx 文件"],
+  ["改稿",    "网页编辑器",      "改源文件，可 diff"],
+  ["版本",    "无",              "git 留痕"],
+  ["风格",    "选模板",          "任意自定义"],
+  ["离线",    "导出带水印",      "原生 pptx+pdf"]
+], {
+  x: 5.1, y: 2.35, w: 4.3, h: 2.3,
+  colW: [0.8, 1.6, 1.9],
+  border: { pt: 0.4, color: "E2E8F0" },
+  fontSize: 9.5,
+  fontFace: "Arial",
+  color: "334155",
+  valign: "middle"
+});
+
+// 适合场景（右下）
+s9_5.addShape(pres.shapes.RECTANGLE, {
+  x: 5.1, y: 4.85, w: 4.3, h: 0.55,
+  fill: { color: "F5F3FF" },
+  line: { color: "C4B5FD", width: 1 }
+});
+s9_5.addText([
+  { text: "适合：", options: { bold: true, color: "5B21B6" } },
+  { text: "团队周报、系列汇报（git 管、可复用）", options: { color: "475569" } }
+], { x: 5.25, y: 4.9, w: 4.0, h: 0.45, fontSize: 11, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// ============================================
+// 第 9.7 页 | AI 提示词速查（结合本项目 CLAUDE.md）
+// ============================================
+let s9_7 = pres.addSlide();
+s9_7.background = { color: WHITE };
+
+s9_7.addShape(pres.shapes.RECTANGLE, {
+  x: 0, y: 0, w: 0.15, h: 5.625,
+  fill: { color: NAVY }
+});
+
+s9_7.addText("AI 提示词速查", {
+  x: 0.6, y: 0.3, w: 8.8, h: 0.55,
+  fontSize: 30, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s9_7.addText("直接复制给 Claude Code 用", {
+  x: 0.6, y: 0.85, w: 8.8, h: 0.35,
+  fontSize: 13, color: SLATE, fontFace: "Arial", margin: 0
+});
+
+// 前提提示（粉色 callout）
+s9_7.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 1.3, w: 8.8, h: 0.5,
+  fill: { color: "FDF2F8" },
+  line: { color: "EC4899", width: 1.2 }
+});
+s9_7.addText([
+  { text: "前提：", options: { bold: true, color: "BE185D" } },
+  { text: "项目根有 CLAUDE.md，Claude Code 会自动加载，提示词里不用重复项目背景", options: { color: "9F1239" } }
+], { x: 0.8, y: 1.35, w: 8.4, h: 0.4, fontSize: 11, fontFace: "Arial", valign: "middle", margin: 0 });
+
+// 4 个提示词卡片（2×2 网格）
+const prompts = [
+  {
+    n: "①",
+    title: "起分支 + 干活",
+    body: "我要开始做 M2 sentiment engine。\n按 CLAUDE.md 的规范起分支，\n实现 src/sentiment/engine.py 的\nhappy path。",
+    color: "0D9488"
+  },
+  {
+    n: "②",
+    title: "写 commit message",
+    body: "看一下 git status 和 git diff，\n按本项目风格（中文、模块前缀\n如 \"M2:\"、简洁）\n帮我写 commit message。",
+    color: "2563EB"
+  },
+  {
+    n: "③",
+    title: "发 PR",
+    body: "git diff main 看一下，\n按 .github/pull_request_template.md\n的 4 个问题生成 PR 描述。\nHappy path：OK, 1 row written",
+    color: "F59E0B"
+  },
+  {
+    n: "④",
+    title: "Review diff",
+    body: "review 这个 diff，重点：\n· 越界改了别人模块？\n· 动了 4 个核心文件？\n· 契约对得上 BLUEPRINT § 三？",
+    color: "DC2626"
+  }
+];
+
+const pCardW = 4.3;
+const pCardH = 1.55;
+const pGapX = 0.2;
+const pGapY = 0.12;
+const pStartX = 0.6;
+const pStartY = 1.95;
+
+prompts.forEach((p, i) => {
+  const col = i % 2;
+  const row = Math.floor(i / 2);
+  const cx = pStartX + col * (pCardW + pGapX);
+  const cy = pStartY + row * (pCardH + pGapY);
+
+  // 卡片底
+  s9_7.addShape(pres.shapes.RECTANGLE, {
+    x: cx, y: cy, w: pCardW, h: pCardH,
+    fill: { color: WHITE },
+    line: { color: "E2E8F0", width: 1 },
+    shadow: makeShadow()
+  });
+
+  // 顶部色条
+  s9_7.addShape(pres.shapes.RECTANGLE, {
+    x: cx, y: cy, w: pCardW, h: 0.06,
+    fill: { color: p.color }
+  });
+
+  // 编号
+  s9_7.addText(p.n, {
+    x: cx + 0.15, y: cy + 0.15, w: 0.4, h: 0.3,
+    fontSize: 16, bold: true, color: p.color, fontFace: "Arial", margin: 0
+  });
+
+  // 标题
+  s9_7.addText(p.title, {
+    x: cx + 0.55, y: cy + 0.15, w: pCardW - 0.65, h: 0.3,
+    fontSize: 13, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+  });
+
+  // 提示词内容（等宽字体）
+  s9_7.addShape(pres.shapes.RECTANGLE, {
+    x: cx + 0.15, y: cy + 0.5, w: pCardW - 0.3, h: pCardH - 0.62,
+    fill: { color: "F8FAFC" }
+  });
+  s9_7.addText(p.body, {
+    x: cx + 0.25, y: cy + 0.55, w: pCardW - 0.5, h: pCardH - 0.7,
+    fontSize: 9.5, color: "334155", fontFace: "Consolas",
+    valign: "top", margin: 0
+  });
+});
+
+// 底部小字提醒
+s9_7.addText("关键：Claude Code 自动 Read CLAUDE.md / BLUEPRINT.md / PR 模板，不用每次重述", {
+  x: 0.6, y: 5.25, w: 8.8, h: 0.3,
+  fontSize: 10, italic: true, color: SLATE,
+  align: "center", fontFace: "Arial", margin: 0
+});
+
+// ============================================
 // 第 10 页 | 快速上手清单
 // ============================================
 let s10 = pres.addSlide();
@@ -639,7 +1079,7 @@ s10.addText("这周就能用起来的 3 件事", {
 const threeThings = [
   { icon: "1", color: "0D9488", title: "Git", body: "把当前项目 init 了\n每天下班前 commit 一次" },
   { icon: "2", color: "2563EB", title: "CC Usage", body: "装完跑 ccusage today\n建立 baseline" },
-  { icon: "3", color: "7C3AED", title: "PPT", body: "下次汇报前\n先用 AI 生成大纲" }
+  { icon: "3", color: "7C3AED", title: "pptx skill", body: "下次汇报前\n让 Claude Code 给你出一版" }
 ];
 
 threeThings.forEach((t, i) => {
@@ -685,16 +1125,27 @@ threeThings.forEach((t, i) => {
   });
 });
 
+// 碰到具体问题装这两个（橙色 tip）
+s10.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 3.85, w: 8.8, h: 0.55,
+  fill: { color: "FEF3C7" },
+  line: { color: "F59E0B", width: 1 }
+});
+s10.addText([
+  { text: "碰到具体问题装这两个：", options: { bold: true, color: "92400E" } },
+  { text: "GitHub timeout → DevSidecar  |  网页和编辑器来回切看 PR → GitHub Pull Requests 扩展", options: { color: "78350F" } }
+], { x: 0.8, y: 3.9, w: 8.4, h: 0.45, fontSize: 11, fontFace: "Arial", valign: "middle", margin: 0 });
+
 // 进阶路线
 s10.addShape(pres.shapes.RECTANGLE, {
-  x: 0.6, y: 4.0, w: 8.8, h: 1.3,
+  x: 0.6, y: 4.55, w: 8.8, h: 0.85,
   fill: { color: WHITE },
   line: { color: "E2E8F0", width: 1 }
 });
 s10.addText([
   { text: "进阶路线", options: { bold: true, color: NAVY, breakLine: true } },
-  { text: "Week 1：熟练 Git 基础循环  →  Week 2：看懂 CC Usage 报告，优化 token 消耗  →  Week 3：独立用 AI 完成 PPT 从大纲到成品", options: { color: "475569" } }
-], { x: 0.8, y: 4.15, w: 8.4, h: 1.0, fontSize: 12, margin: 0 });
+  { text: "Week 1：Git 基础循环 + 装好辅助工具  →  Week 2：看懂 CC Usage 报告  →  Week 3：用 pptx skill 完成一份完整汇报", options: { color: "475569" } }
+], { x: 0.8, y: 4.65, w: 8.4, h: 0.7, fontSize: 11, margin: 0 });
 
 // ============================================
 // 第 11 页 | 结束页 (深色底)
