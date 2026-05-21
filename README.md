@@ -19,6 +19,10 @@
 
 ## 快速上手
 
+### 0. 网络环境(中国大陆)
+
+`git push` / `git clone` / `pip install` 等操作需要稳定访问 GitHub。如果连接超时,推荐用 [DevSidecar](https://github.com/docmirror/dev-sidecar) 一键加速,命令行操作也能受益。
+
 ### 1. 装依赖
 
 ```powershell

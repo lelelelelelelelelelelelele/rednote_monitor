@@ -90,6 +90,24 @@ git checkout -b feat/功能名
 
 ---
 
+## 第 5.5 页 | 实用工具推荐：DevSidecar
+
+**问题**：`git push` / `git clone` 连不上 GitHub，报错 timeout
+**解决**：[DevSidecar](https://github.com/docmirror/dev-sidecar) — 开发者边车，一键加速
+
+**特点**
+- 桌面软件，Windows / Mac / Linux 都支持
+- 点击"一键加速"，系统全局生效
+- 命令行里的 `git push` 也能走加速通道
+- 同时还加速 npm、pip、Stack Overflow 等开发平台
+
+**适用场景**
+- 日常 `git clone` 大型仓库
+- `pip install` / `npm install` 装依赖
+- 访问 GitHub Release 下载文件
+
+---
+
 ## 第 6 页 | CC Usage（1/2）Token 是什么，为什么要统计
 
 **Token = AI 模型的计费单位**

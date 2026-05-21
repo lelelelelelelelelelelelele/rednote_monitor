@@ -303,6 +303,68 @@ s5.addTable([
 });
 
 // ============================================
+// 第 5.5 页 | 实用工具推荐：DevSidecar
+// ============================================
+let s5_5 = pres.addSlide();
+s5_5.background = { color: WHITE };
+
+s5_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0, y: 0, w: 0.15, h: 5.625,
+  fill: { color: NAVY }
+});
+
+s5_5.addText("实用工具推荐", {
+  x: 0.6, y: 0.35, w: 8.8, h: 0.6,
+  fontSize: 32, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+s5_5.addText("DevSidecar — 解决 GitHub 网络问题", {
+  x: 0.6, y: 0.9, w: 8.8, h: 0.35,
+  fontSize: 14, color: SLATE, fontFace: "Arial", margin: 0
+});
+
+// 问题描述框
+s5_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 1.5, w: 8.8, h: 0.8,
+  fill: { color: "FEF3C7" },
+  line: { color: "F59E0B", width: 1 }
+});
+s5_5.addText("问题：git push / git clone 连不上 GitHub，报错 timeout", {
+  x: 0.8, y: 1.6, w: 8.4, h: 0.6,
+  fontSize: 12, color: "92400E", fontFace: "Arial", valign: "middle"
+});
+
+// 特点列表
+s5_5.addText("特点", {
+  x: 0.6, y: 2.5, w: 8.8, h: 0.35,
+  fontSize: 14, bold: true, color: NAVY, fontFace: "Arial", margin: 0
+});
+
+s5_5.addText([
+  { text: "• ", options: { color: NAVY } },
+  { text: "桌面软件，Windows / Mac / Linux 都支持", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "点击\"一键加速\"，系统全局生效", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "命令行里的 git push 也能走加速通道", options: { color: "334155" } },
+  { text: "\n• ", options: { color: NAVY } },
+  { text: "同时还加速 npm、pip、Stack Overflow 等", options: { color: "334155" } }
+], {
+  x: 0.6, y: 2.9, w: 8.8, h: 1.8,
+  fontSize: 12, fontFace: "Arial", lineSpacing: 22
+});
+
+// 适用场景
+s5_5.addShape(pres.shapes.RECTANGLE, {
+  x: 0.6, y: 4.8, w: 8.8, h: 0.6,
+  fill: { color: LIGHT_BG },
+  line: { color: ICE_BLUE, width: 1 }
+});
+s5_5.addText("适用：git clone 大型仓库、pip/npm install、GitHub Release 下载", {
+  x: 0.8, y: 4.85, w: 8.4, h: 0.5,
+  fontSize: 11, color: SLATE, fontFace: "Arial", valign: "middle"
+});
+
+// ============================================
 // 第 6 页 | CC Usage（1/2）Token 是什么
 // ============================================
 let s6 = pres.addSlide();

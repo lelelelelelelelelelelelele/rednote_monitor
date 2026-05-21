@@ -15,7 +15,7 @@ Write-Host "Output:     $pdfPath"
 
 try {
     $ppt = New-Object -ComObject PowerPoint.Application
-    $ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+    $ppt.Visible = -1  # msoTrue = -1
 
     $pres = $ppt.Presentations.Open($pptxPath)
     $pres.SaveAs($pdfPath, 32)  # 32 = ppSaveAsPDF
