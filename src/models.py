@@ -143,6 +143,41 @@ class DailyMetric(BaseModel):
 
 
 # ------------------------------------------------------------------ #
+# M4 输出 (Eval Bench)
+# ------------------------------------------------------------------ #
+
+
+class LabeledSample(BaseModel):
+    """一条人工标注的评测样本(单条评论)。"""
+
+    comment_id: str
+    keyword: str
+    text: str
+    n_likes: int = 0
+    post_text: str = ""  # 父帖子文本,给 LLM 提供上下文
+    difficulty: Literal["easy", "medium", "hard"] = "medium"
+    style: Literal["sarcasm", "novice", "normal"] = "normal"
+    sentiment_label: SentimentScore
+    is_relevant_label: bool = True
+
+
+class EvalReport(BaseModel):
+    """一次评测的汇总报告。"""
+
+    model: str
+    prompt_id: str
+    total_samples: int
+    accuracy: float
+    accuracy_by_difficulty: dict[str, float]
+    accuracy_by_style: dict[str, float]
+    sarcasm_subset_accuracy: float
+    is_relevant_f1: float
+    confusion_matrix: dict[str, dict[str, int]]
+    total_cost_usd: float
+    run_date: str
+
+
+# ------------------------------------------------------------------ #
 # XHS → RawPost 解析适配器
 # ------------------------------------------------------------------ #
 

@@ -80,3 +80,21 @@ per_comment:
 
     Respond in EXACT JSON (no markdown):
     {{"sentiment": -2/-1/0/1/2, "is_relevant": true/false}}
+
+eval_label:
+  system: |
+    You are a human annotator labeling Xiaohongshu comments for sentiment analysis evaluation.
+    Be precise and conservative with labels.
+
+  user: |
+    Post about "{keyword}": {post_text}
+
+    Comment: {comment_text}
+
+    Respond in EXACT JSON (no markdown):
+    {{"sentiment": -2/-1/0/1/2, "is_relevant": true/false, "difficulty": "easy/medium/hard", "style": "sarcasm/novice/normal"}}
+
+    - sentiment: -2=very bearish, -1=bearish, 0=neutral, 1=bullish, 2=very bullish
+    - is_relevant: Does this comment discuss "{keyword}" as an investment topic?
+    - difficulty: easy=obvious sentiment, medium=ambiguous, hard=requires cultural context/sarcasm
+    - style: sarcasm=uses irony/sarcasm, novice=beginner/inexperienced tone, normal=straightforward
