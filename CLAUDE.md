@@ -39,13 +39,14 @@ X = 模块编号(M1-M7,见 @BLUEPRINT.md § 二)。partner 没说改哪个模块
 
 | 模块 | 目录 |
 |---|---|
-| M1 Scraper | `src/scraper/` |
-| M2 Sentiment | `src/sentiment/` |
-| M3 Aggregator | `src/aggregate/` |
-| M4 Eval | `src/eval/` |
-| M5 Backtest | `src/backtest/` |
-| M6 Dashboard | `app/` |
-| M7 Notify | `src/notify/` |
+| M0 Monitor | `src/m0_monitor/` |
+| M1 Scraper | `src/m1_scraper/` |
+| M2 Sentiment | `src/m2_sentiment/` |
+| M3 Aggregator | `src/m3_aggregate/` |
+| M4 Eval | `src/m4_eval/` |
+| M5 Backtest | `src/m5_backtest/`(暂未建) |
+| M6 Dashboard | `app/`(暂未建) |
+| M7 Notify | `src/m7_notify/`(暂未建) |
 
 partner 要你改**不属于他模块**的代码 → **先提醒他可能越界**,让 user 确认后再动。
 
