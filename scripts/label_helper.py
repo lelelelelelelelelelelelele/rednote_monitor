@@ -255,9 +255,11 @@ def main() -> None:
         parser.error("Must specify --auto-label or --review")
 
     import os
-    base_url = args.base_url or os.environ.get("LLM_BASE_URL", "https://token-plan-cn.xiaomimimo.com/v1")
+    base_url = args.base_url or os.environ.get("LLM_BASE_URL", "")
     api_key = args.api_key or os.environ.get("LLM_API_KEY", "")
     model = args.model or os.environ.get("LLM_MODEL", "mimo-v2.5-pro")
+    if not base_url:
+        parser.error("LLM_BASE_URL not set. Add it to .env (see .env.example) or pass --base-url.")
 
     if args.auto_label:
         output = args.output or Path("data/eval/labeled_auto.csv")

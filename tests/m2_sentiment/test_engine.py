@@ -621,6 +621,10 @@ class TestEnvVarConfig:
         engine = SentimentEngine()
         assert engine.model == "mimo-v2.5-pro"
 
-    def test_default_base_url(self):
+    def test_base_url_missing_raises_at_call(self, monkeypatch):
+        """无 LLM_BASE_URL 时 init 不报错,但调用 _call_llm 时应 raise。"""
+        monkeypatch.delenv("LLM_BASE_URL", raising=False)
         engine = SentimentEngine()
-        assert engine.base_url == "https://token-plan-cn.xiaomimimo.com/v1"
+        assert engine.base_url == ""
+        with pytest.raises(RuntimeError, match="LLM_BASE_URL not set"):
+            engine._call_llm("sys", "user")

@@ -24,8 +24,7 @@ from .prompts import PromptTemplates
 
 logger = logging.getLogger(__name__)
 
-# Default config — overridable via env vars
-_DEFAULT_BASE_URL = "https://token-plan-cn.xiaomimimo.com/v1"
+# Default model — base URL 必须由 LLM_BASE_URL env var / .env 提供,不入仓库
 _DEFAULT_MODEL = "mimo-v2.5-pro"
 
 
@@ -98,7 +97,7 @@ class SentimentEngine:
         fallback_mode: bool = True,
     ):
         self.model = model or os.environ.get("LLM_MODEL", _DEFAULT_MODEL)
-        self.base_url = (base_url or os.environ.get("LLM_BASE_URL", _DEFAULT_BASE_URL)).rstrip("/")
+        self.base_url = (base_url or os.environ.get("LLM_BASE_URL") or "").rstrip("/")
         self.api_key = api_key or os.environ.get("LLM_API_KEY", "")
         self.mode = mode
         self.max_retries = max_retries
@@ -446,6 +445,11 @@ class SentimentEngine:
             "response_format": {"type": "json_object"},
         }
 
+        if not self.base_url:
+            raise RuntimeError(
+                "LLM_BASE_URL not set. Add it to .env (see .env.example) "
+                "or pass base_url= to SentimentEngine()."
+            )
         url = f"{self.base_url}/chat/completions"
 
         with httpx.Client(timeout=120) as client:

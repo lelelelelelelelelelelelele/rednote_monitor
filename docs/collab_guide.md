@@ -8,7 +8,11 @@
 
 ### 1.1 开 branch protection — 必做
 
-路径:**GitHub repo 主页 → Settings → 左侧 Branches → Add branch protection rule**
+**两条路任选其一,规则等价:**
+- **经典版:** GitHub repo 主页 → Settings → 左侧 Branches → Add branch protection rule
+- **新版 Rulesets(GitHub 现在主推):** Settings → Rules → Rulesets → New branch ruleset → Target = Default branch
+
+经典版按下表勾,新版 Rulesets 对应 rule type 是 `Restrict deletions` / `Block force pushes` / `Require a pull request before merging`(里面再勾 `Require review from Code Owners`)。
 
 | 选项 | 设置 | 为啥 |
 |---|---|---|
@@ -20,6 +24,8 @@
 | ☐ Require status checks | 关 | 暂无 CI |
 
 点 **Create**,完事。
+
+查当前规则现状:`gh api repos/<owner>/<repo>/rulesets`(新版)或 `gh api repos/<owner>/<repo>/branches/main/protection`(经典)。
 
 > ⚠ 开 protection 后,**之前那种本地 squash + force push 重写历史的操作就不能再做了**。所以分工 / 骨架定下来再开。
 
@@ -105,7 +111,9 @@ git push -u origin feat/m2-sentiment
 | 现象 | 原因 / 处理 |
 |---|---|
 | `git push origin main` 被拒,提示 *protected branch* | 你想直推 main 了 → 起 feature 分支 `git checkout -b feat/xxx` 再推 |
-| PR 描述框没自动加载模板 | 文件名拼错,只能叫 `.github/pull_request_template.md` 或 `.github/PULL_REQUEST_TEMPLATE.md` |
+| PR 描述框没自动加载模板(网页) | 文件名拼错,只能叫 `.github/pull_request_template.md` 或 `.github/PULL_REQUEST_TEMPLATE.md` |
+| PR 描述框没自动加载模板(VSCode 插件) | VSCode GitHub Pull Requests 插件默认不加载;`Ctrl+,` 搜 `pullRequestDescription`,改成 `template` 即可。或直接手动粘 `.github/pull_request_template.md` 内容也行 |
 | CODEOWNERS 不 @ 人 | 文件名必须是 `.github/CODEOWNERS`(无扩展名);username 拼错也不会 ping |
-| `git pull` 后 merge 冲突 | 在自己分支 `git fetch && git rebase origin/main`,解冲突后 `git push --force-with-lease`(只推自己分支,不是 main) |
+| `git pull` 后 merge 冲突 | 在自
+己分支 `git fetch && git rebase origin/main`,解冲突后 `git push --force-with-lease`(只推自己分支,不是 main) |
 | 分支干了一周,main 跑远了 | 每 2-3 天 rebase 一次 main 防漂移(同上命令) |

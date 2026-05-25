@@ -218,8 +218,9 @@ def test_save_to_manual(scraper, tmp_manual_dir):
 
     filepath = scraper._save_to_manual(payload, "甲骨文", "oracle", "6823a1b400000000010001")
 
+    today = date.today().strftime("%Y%m%d")
     assert filepath.exists()
-    assert filepath.name == "test_20260513_oracle_feed_6823a1b4_detail.json"
+    assert filepath.name == f"test_{today}_oracle_feed_6823a1b4_detail.json"
 
     # 验证内容
     saved = json.loads(filepath.read_text(encoding="utf-8"))
