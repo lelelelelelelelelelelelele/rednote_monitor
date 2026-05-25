@@ -1,55 +1,106 @@
-# CLAUDE.md
+# Claude Code 协作指导
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> 这个 CLAUDE.md 会被 Claude Code 自动加载到 context。Claude 在本项目下帮 partner 干活时,**必须遵守下面的约束**。详细文档用 @-reference 列出,按需 Read。
 
-## Project Overview
+---
 
-`rednote-monitor` is a Xiaohongshu (Little Red Book) stock sentiment monitoring system. It scrapes retail investor discussions, scores them with multimodal LLMs, and aggregates daily metrics for contrarian trading signals. Python 3.11+, using `uv` as package manager.
+## 一句话项目
 
-## Commands
+多人协作的小红书反指系统,LLM 给散户帖子打情绪分,日度聚合作为"反指"信号。当前 **Week 1 M1 阶段**。完整设计 @BLUEPRINT.md。
 
-| Action | Command |
+---
+
+## 必读文档
+
+| 文档 | 什么时候 Read |
 |---|---|
-| Install deps | `uv sync` |
-| Run all tests | `uv run pytest` |
-| Run single test | `uv run pytest tests/scraper/test_xhs_mcp.py` |
-| Lint | `uv run ruff check .` |
-| Lint + auto-fix | `uv run ruff check --fix .` |
-| Type check | `uv run mypy src/` |
-| Daily pipeline | `uv run python scripts/daily_run.py --date YYYY-MM-DD` |
+| @docs/collab_guide.md | partner 让你做任何 git / PR / merge 操作**前** |
+| @.github/pull_request_template.md | partner 让你发 PR 时,描述**严格按 4 问填** |
+| @BLUEPRINT.md | partner 提到 M1-M7 / 数据契约 / KPI / 模块分工时 |
+| @report/RULES.md | partner 操作 `report/` 目录（新建/修改汇报材料）时 |
 
-## Architecture
+---
 
-7-module pipeline communicating via JSONL files and SQLite. Full design in `BLUEPRINT.md`.
+## 硬约束(违反 = main 损坏 / 全员炸)
 
+### 1. 永远不能直推 main
+
+```powershell
+# ❌ 永远不要这样
+git push origin main
+
+# ✅ 起 feature 分支
+git checkout -b feat/m{X}-{短描述}
 ```
-M1 Scraper → RawPost (JSONL) → M2 Sentiment → ScoredPost (JSONL) → M3 Aggregator → SQLite
+
+X = 模块编号(M1-M7,见 @BLUEPRINT.md § 二)。partner 没说改哪个模块时,**问清楚再动**。
+
+### 2. 模块边界:不要越界改别人的代码
+
+| 模块 | 目录 |
+|---|---|
+| M0 Monitor | `src/m0_monitor/` |
+| M1 Scraper | `src/m1_scraper/` |
+| M2 Sentiment | `src/m2_sentiment/` |
+| M3 Aggregator | `src/m3_aggregate/` |
+| M4 Eval | `src/m4_eval/` |
+| M5 Backtest | `src/m5_backtest/`(暂未建) |
+| M6 Dashboard | `app/`(暂未建) |
+| M7 Notify | `src/m7_notify/`(暂未建) |
+
+partner 要你改**不属于他模块**的代码 → **先提醒他可能越界**,让 user 确认后再动。
+
+### 3. 4 个核心受保护文件 — 改之前先停下
+
+下面任一文件被改 = 全员炸的风险。**partner 要你动这些,你必须先停下来回答他**:
+
+> "这是核心受保护文件,本项目流程要求**群里 +1** + **Code Owner approve**(详见 collab_guide § 三)。确认要走流程吗?"
+
+- `src/models.py` —— 数据契约(RawPost / ScoredPost / DailyMetric)
+- `config/prompts.yaml` —— M2 LLM prompt
+- `config/watchlist.yaml` —— ticker 清单
+- `scripts/daily_run.py` —— 调度入口
+
+详细流程:@docs/collab_guide.md § 三。
+
+### 4. PR 描述必须按模板逐条填
+
+发 PR 时(`gh pr create` 或网页),描述**严格按 @.github/pull_request_template.md 的 4 个问题填**,不要跳问,不要简化。partner 跑没跑过 happy path 你不知道就直接问他,**不要假设**。
+
+---
+
+## 工作流速查
+
+```powershell
+# 1. 同步 main
+git checkout main && git pull
+
+# 2. 起分支
+git checkout -b feat/m2-first-happy-path
+
+# 3. 干活...
+
+# 4. commit(显式列文件,不要 git add -A)
+git add src/sentiment/engine.py src/sentiment/prompts.py
+git commit -m "M2: first happy path with GPT-4o-mini"
+
+# 5. push 后去网页发 PR
+git push -u origin feat/m2-first-happy-path
 ```
 
-Planned: M4 Eval Bench, M5 Backtest, M6 Dashboard (Streamlit), M7 Notify.
+**长跑分支(>3 天)**每 2-3 天 `git rebase origin/main` 防漂移。
 
-**Key files:**
-- `src/models.py` — Central data contracts (Pydantic v2). All modules depend on it. **Changes require coordination.**
-- `src/scraper/base.py` — `Scraper` Protocol. All scrapers implement `async fetch(keyword, date) -> list[RawPost]`.
-- `src/scraper/fallback.py` — FallbackScraper: XhsMcpScraper → ManualScraper auto-degradation.
-- `src/sentiment/engine.py` — Two-phase LLM scoring (post body multimodal, then comments via LiteLLM).
-- `src/sentiment/prompts.py` — Loads prompt templates from `config/prompts.yaml`.
-- `config/watchlist.yaml` — Ticker definitions and keywords.
-- `config/prompts.yaml` — LLM prompt templates for post/comment scoring.
-- `scripts/daily_run.py` — Daily pipeline orchestrator (M1→M2→M3).
+---
 
-## Tech Stack
+## v2 范围 — 不要现在做
 
-- **Validation:** Pydantic v2 | **Storage:** SQLModel + SQLite | **LLM:** LiteLLM (multi-model)
-- **Scraping:** xiaohongshu-mcp (third-party, in `external/`, gitignored)
-- **Linting:** Ruff (E/F/I/UP/B rules, line-length=100) | **Types:** mypy (strict mode)
-- **Testing:** pytest + pytest-asyncio
+@docs/v2_backlog.md 里三件事(作者级反指 / 多源 cross-check / 模型蒸馏)是 **v1 跑满 30 天之后**才做。partner 提出这些方向时,**先提醒他这是 v2 范围**,等 user 拍板再动手。
 
-## Important Conventions
+---
 
-- **`src/models.py` is the most conflict-prone file** — all modules depend on it. Coordinate before modifying.
-- **`data/raw/` contains real user data** (nicknames, IP addresses) — never commit. Share sanitized samples in `tests/fixtures/`.
-- **`external/` is gitignored** — xiaohongshu-mcp must be installed separately per its upstream README.
-- **`post_id` encodes publish time:** `int(post_id[:8], 16)` gives Unix seconds. Used for client-side date filtering.
-- **Keyword ambiguity is expected:** "甲骨文" matches calligraphy, "机器人" matches crafts. M2 outputs `is_relevant`; M3 filters on it.
-- **Comment scoring:** LLM gives discrete per-comment scores only. The continuous `sentiment_comments_avg` is computed client-side with `n_likes` weighting.
+## 协作风格 hint
+
+- 写代码默认中文注释 + 中文 commit message(已有 commit 都是中文)
+- vibe-coding 项目,接口比内部实现重要;数据契约改前停下问 user
+- 用 `uv` 管包,不用 pip
+- Windows 主机,PowerShell 优先;命令尽量给 PowerShell 写法

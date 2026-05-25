@@ -64,10 +64,17 @@ data/eval/*.cache.json
 .litellm_cache/
 .cache/
 
+# --- 个人 setup 笔记(含本机用户名 / SSH 路径,不公开) ---
+MIGRATION.md
+
 # --- 根目录孤儿图(粘贴截图常叫 image.png;架构图请放 docs/) ---
 /*.png
 /*.jpg
 /*.jpeg
+
+# --- Report 预览产物(截图可从 PPT 重导,PDF 可手动存) ---
+report/**/_review/
+report/**/*.pdf
 
 # --- build / dist ---
 build/

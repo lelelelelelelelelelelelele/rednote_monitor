@@ -1,0 +1,9 @@
+# 核心受保护文件 — 改这 4 个文件需要 Code Owner cross-check
+# 详细流程见 docs/collab_guide.md § 三
+#
+# 维护:qbw 加入后,在每行末尾追加 @qbw-的GitHub-username
+
+src/models.py         @lelelelelelelelelelelelele @lush0622
+config/prompts.yaml   @lelelelelelelelelelelelele @lush0622
+config/watchlist.yaml @lelelelelelelelelelelelele @lush0622
+scripts/daily_run.py  @lelelelelelelelelelelelele @lush0622

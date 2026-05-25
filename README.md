@@ -19,6 +19,10 @@
 
 ## 快速上手
 
+### 0. 网络环境(中国大陆)
+
+`git push` / `git clone` / `pip install` 等操作需要稳定访问 GitHub。如果连接超时,推荐用 [DevSidecar](https://github.com/docmirror/dev-sidecar) 一键加速,命令行操作也能受益。
+
 ### 1. 装依赖
 
 ```powershell
@@ -57,7 +61,7 @@ M1 的 ManualScraper 兜底路径:把手抓的 30 条评论丢到 `data/raw/manu
 ├── config/watchlist.yaml  # 标的 + 关键词
 ├── src/                   # 业务代码(scraper / sentiment / aggregate / ...)
 ├── data/                  # 抓回来的 raw / scored,全部 gitignore
-├── docs/architecture.png  # 渲染好的架构图
+├── docs/architecture/     # 架构图三件套:schema.yaml(真值) + diagram.{mmd,png}
 ├── external/              # xiaohongshu-mcp + xhs-aigc-dataset,不入 git
 └── .mcp.json              # Claude Code 的 MCP 配置
 ```
@@ -73,7 +77,3 @@ M1 的 ManualScraper 兜底路径:把手抓的 30 条评论丢到 `data/raw/manu
 - **不传 `publish_time` 给 scraper**,只传 `sort_by=最新`;时间窗在客户端用 `int(post_id[:8], 16)` 反解切片。
 
 ---
-
-## 换机迁移
-
-H 盘整盘搬到新电脑 / 重装系统:见 BLUEPRINT § 九,30 分钟内恢复开发状态。
