@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M1 v2 准备 · w2（lele）</title>
+<style>
+:root {
+  --navy: #1E2761;
+  --navy-light: #2d3a8c;
+  --ice: #7ED4E6;
+  --text: #1f2937;
+  --text-mute: #6b7280;
+  --bg: #ffffff;
+  --bg-soft: #f6f8fa;
+  --bg-toc: #f9fafb;
+  --border: #e5e7eb;
+  --accent: #1E2761;
+  --code-bg: #f6f8fa;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  max-width: 1280px;
+  margin: 0 auto;
+  gap: 2rem;
+  padding: 2rem 2rem 4rem;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 1rem; }
+  .toc { position: static !important; max-height: none !important; }
+  .content table { display: block; overflow-x: auto; }
+}
+
+/* ===== TOC ===== */
+.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--bg-toc);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1rem;
+  font-size: 0.875rem;
+}
+
+.toc h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-mute);
+  font-weight: 600;
+}
+
+.toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc li { margin: 0.25rem 0; }
+.toc li.toc-sub { padding-left: 1rem; font-size: 0.8125rem; }
+
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+  display: block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+}
+
+.toc a:hover {
+  background: #fff;
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== Content ===== */
+.content {
+  min-width: 0; /* 防止 grid overflow */
+  max-width: 820px;
+}
+
+.content h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid var(--navy);
+  color: var(--navy);
+  font-weight: 700;
+}
+
+.content h2 {
+  font-size: 1.5rem;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.content h3 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.75rem;
+  color: var(--navy-light);
+  font-weight: 600;
+}
+
+.content h4 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.content p { margin: 0.75rem 0; }
+
+.content a { color: var(--accent); text-decoration: none; }
+.content a:hover { text-decoration: underline; }
+
+/* blockquote */
+.content blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--bg-soft);
+  border-left: 3px solid var(--navy);
+  color: var(--text);
+  border-radius: 0 6px 6px 0;
+}
+.content blockquote p { margin: 0.3rem 0; }
+.content blockquote strong { color: var(--text); }
+
+/* tables */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.content table thead {
+  background: var(--navy);
+  color: #fff;
+}
+
+.content table th,
+.content table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.content table tbody tr:nth-child(even) {
+  background: var(--bg-soft);
+}
+
+/* code */
+.content code {
+  font-family: "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono",
+    Menlo, Courier, monospace;
+  font-size: 0.875em;
+  background: var(--code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--navy-light);
+}
+
+.content pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.content pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+  font-size: inherit;
+}
+
+/* lists */
+.content ul, .content ol { padding-left: 1.5rem; }
+.content li { margin: 0.25rem 0; }
+.content li > ul, .content li > ol { margin: 0.25rem 0; }
+
+/* hr */
+.content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* checklist (- [ ] / - [x]) */
+.content li input[type="checkbox"] {
+  margin-right: 0.4rem;
+}
+
+/* 强调小红点（自定义状态徽章） */
+.content em { color: var(--text-mute); font-style: italic; }
+.content strong { color: var(--text); }
+
+/* print */
+@media print {
+  .layout { display: block; padding: 1rem; }
+  .toc { display: none; }
+  .content { max-width: 100%; }
+  .content a { color: var(--text); }
+}
+
+footer.meta {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  color: var(--text-mute);
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="toc">
+    <h4>目录</h4>
+    <ul>
+        <li class="toc-main"><a href="#一本周产出">一、本周产出</a></li>
+        <li class="toc-main"><a href="#二v2-讨论结构">二、v2 讨论结构</a></li>
+        <li class="toc-main"><a href="#三4-种采集方法候选">三、4 种采集方法（候选）</a></li>
+        <li class="toc-sub"><a href="#a-模板帖关键词搜">A · 模板帖关键词搜</a></li>
+        <li class="toc-sub"><a href="#b-爆款帖评论-ticker-tagging">B · 爆款帖评论 ticker tagging</a></li>
+        <li class="toc-sub"><a href="#c-kol-关注列表备份">C · KOL 关注列表（备份）</a></li>
+        <li class="toc-sub"><a href="#d-diy-自发帖">D · DIY 自发帖</a></li>
+        <li class="toc-main"><a href="#四初步规律-筛选规则">四、初步规律 / 筛选规则</a></li>
+        <li class="toc-sub"><a href="#41-pattern-关键词-q-句式喂方法-abc-的种子">4.1 Pattern / 关键词 / Q 句式（喂方法 A/B/C 的种子）</a></li>
+        <li class="toc-sub"><a href="#42-财报分析贴排除黑名单粗筛词">4.2 财报分析贴排除黑名单（粗筛词）</a></li>
+        <li class="toc-sub"><a href="#43-时间敞口约束">4.3 时间敞口约束</a></li>
+        <li class="toc-sub"><a href="#44-情绪强度门槛">4.4 情绪强度门槛</a></li>
+        <li class="toc-main"><a href="#五案例研究20-帖验证规律">五、案例研究：20 帖验证规律</a></li>
+        <li class="toc-sub"><a href="#51-怎么做">5.1 怎么做</a></li>
+        <li class="toc-sub"><a href="#52-标注分工">5.2 标注分工</a></li>
+        <li class="toc-sub"><a href="#53-期望产出">5.3 期望产出</a></li>
+        <li class="toc-sub"><a href="#54-时间预算">5.4 时间预算</a></li>
+        <li class="toc-main"><a href="#六question想听你们意见">六、Question（想听你们意见）</a></li>
+        <li class="toc-sub"><a href="#61-4-种采集方法-abcd-你给个排序">6.1 4 种采集方法 A/B/C/D 你给个排序</a></li>
+        <li class="toc-sub"><a href="#62-is_emotional-门控放-m1-还是-m2">6.2 `is_emotional` 门控放 M1 还是 M2</a></li>
+        <li class="toc-sub"><a href="#63-方案-ckol保不保留为备份">6.3 方案 C（KOL）保不保留为备份</a></li>
+        <li class="toc-main"><a href="#七下周计划略">七、下周计划（略）</a></li>
+        <li class="toc-main"><a href="#八token-用量略">八、Token 用量（略）</a></li>
+        <li class="toc-main"><a href="#附录项目级讨论另文本文不展开">附录：项目级讨论（另文，本文不展开）</a></li>
+    </ul>
+  </aside>
+  <main class="content">
+<h1>M1 v2 准备</h1>
+<blockquote>
+<p>当前 v1（per-ticker keyword 搜）噪声 50%，要换思路。
+把 v2 准备的几个候选 + 我目前的想法摆出来，所有节都欢迎讨论。</p>
+<p>2026-05-27 · lele</p>
+</blockquote>
+<hr>
+<h2 id="一本周产出">一、本周产出</h2>
+<ul>
+<li><strong>lele</strong>：脚手架收尾（CODEOWNERS / CLAUDE.md 路径对齐 / 合 lsm 分支）+ AI 工具指南扩充 + LLM URL env 化（<code>chore/llm-env-and-cleanup</code> 待 review）+ HTML 报告试点（本期）+ M1 v2 spike 设计文档（<code>docs/m1_viral_post_tagging_spike.md</code>）</li>
+<li><strong>lsm</strong>：完成 M1 / M2 / M3 模块代码 + 测试 + M4 评测脚手架（<code>labeled_200.csv</code> + <code>results_2026-05-23.md</code>）+ m0-m3 目录重构 + M2 架构图</li>
+<li><strong>qbw</strong>：TODO</li>
+</ul>
+<hr>
+<h2 id="二v2-讨论结构">二、v2 讨论结构</h2>
+<p>v2 准备按&quot;工具 → 规则 → 数据&quot;的顺序：</p>
+<ol>
+<li><strong>从哪儿拿</strong> — § 三 4 种采集方法（候选）</li>
+<li><strong>怎么找：初步规律</strong> — § 四 Pattern / 关键词 / 黑名单 / 时间敞口 / 情绪强度</li>
+<li><strong>用真实数据验证</strong> — § 五 20 帖案例研究</li>
+</ol>
+<hr>
+<h2 id="三4-种采集方法候选">三、4 种采集方法（候选）</h2>
+<p>propose 了四种方法。详细评估留到 § 五。</p>
+<h3 id="a-模板帖关键词搜">A · 模板帖关键词搜</h3>
+<p>按&quot;求讨论&quot;句式搜帖：<code>&quot;怎么看 XX&quot;</code> / <code>&quot;XX 还能上车吗&quot;</code> / <code>&quot;XX 该不该买&quot;</code> / <code>&quot;XX 值不值得抄底&quot;</code> 等。模板帖天然吸引情绪化评论，标题正则可匹配，不用 LLM 分类。</p>
+<p><strong>主要风险</strong>：模板帖本身互动可能一般（不是爆款）；句式池要定期 review 新词。</p>
+<h3 id="b-爆款帖评论-ticker-tagging">B · 爆款帖评论 ticker tagging</h3>
+<p><strong>核心反转：用帖子覆盖关键词，不是用关键词找帖子。</strong> A/C 都是 ticker → 帖子，B 是帖子 → ticker。挑 <code>n_likes ≥ 1000</code> 的情绪化股票帖，抓全量评论（500+ 条），逐条 LLM 抽 ticker。单帖能产 100+ 条 ticker-tagged 评论。详见 <code>docs/m1_viral_post_tagging_spike.md</code>。</p>
+<p><strong>主要风险</strong>：supply 不稳（爆款可遇不可求）；爆款帖访问量大可能被风控盯（BLUEPRINT § 八 风险 6）。</p>
+<h3 id="c-kol-关注列表备份">C · KOL 关注列表（备份）</h3>
+<p>不按 keyword 搜，按&quot;作者&quot;拉。手动挑 5-10 个股票垂类 KOL，xhs-mcp 按 user_id 拉他们最近 7 天发的所有帖。</p>
+<p><strong>主要风险</strong>：sample bias 大（KOL 选谁就定调），需多空对冲选 KOL；KOL 自己也会被限流。</p>
+<h3 id="d-diy-自发帖">D · DIY 自发帖</h3>
+<p>副号自发&quot;怎么看 XXX&quot;，第二天收评论 → 落盘 → 删帖。100% supply 可控。</p>
+<p><strong>主要风险</strong>：XHS 反作弊高风险（发-删模式显眼）；账号被封 = 同时挂掉 ManualScraper 兜底；合规边缘。</p>
+<hr>
+<h2 id="四初步规律-筛选规则">四、初步规律 / 筛选规则</h2>
+<p>4 个方法要跑起来，得先给它们喂&quot;种子&quot;——句式池、关键词、黑名单、阈值。下面这些是当前的初步直觉，<strong>全部待 § 五 案例研究验证</strong>。</p>
+<h3 id="41-pattern-关键词-q-句式喂方法-abc-的种子">4.1 Pattern / 关键词 / Q 句式（喂方法 A/B/C 的种子）</h3>
+<ul>
+<li><strong>方案 A 句式池</strong>（用来正则匹配标题）：
+<ul>
+<li><code>怎么看 XX</code> / <code>XX 还能上车吗</code> / <code>XX 该不该买</code></li>
+<li><code>XX 值不值得抄底</code> / <code>XX 还能拿吗</code> / <code>求大佬指点 XX</code></li>
+<li><code>XX 还有救吗</code> / <code>XX 能不能看</code> / <code>XX 还能不能买</code></li>
+</ul>
+</li>
+<li><strong>方案 B 爆款帖筛词</strong>：
+<ul>
+<li>互动门槛：<code>n_likes ≥ 1000</code></li>
+<li>内容相关：含股票/A股/美股/港股/基金/牛市/熊市/抄底/梭哈/被套等</li>
+<li>情绪信号：感叹号密度、晒持仓截图、短句</li>
+</ul>
+</li>
+<li><strong>方案 C 候选 KOL 名单</strong>：5-10 个股票垂类账号，待群里挑（含多空对冲）</li>
+</ul>
+<h3 id="42-财报分析贴排除黑名单粗筛词">4.2 财报分析贴排除黑名单（粗筛词）</h3>
+<p>候选词（待 § 五 案例研究标注&quot;否&quot;样本里反推确认）：</p>
+<ul>
+<li><strong>财报基本面</strong>：财报 / 营收 / 业绩 / 季报 / 年报 / 财报解读</li>
+<li><strong>估值指标</strong>：PE / PB / 估值 / 现金流 / 毛利率 / 拆解 / DCF</li>
+<li><strong>技术分析</strong>：K 线 / 均线 / MACD / 支撑位 / 阻力位 / 趋势线</li>
+<li><strong>卖方研报</strong>：卖方 / 研报 / 目标价 / 评级</li>
+</ul>
+<h3 id="43-时间敞口约束">4.3 时间敞口约束</h3>
+<table>
+<thead>
+<tr>
+<th>时间敞口</th>
+<th>例子</th>
+<th>是否保留</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>短（小时-日）</td>
+<td>“今天又跌了，想哭”</td>
+<td>✅ 要</td>
+</tr>
+<tr>
+<td>中（本周）</td>
+<td>“这周财报前梭哈了一手”</td>
+<td>✅ 要</td>
+</tr>
+<tr>
+<td>长（财报季 / 半年展望）</td>
+<td>“NVDA 明年估值能看到 X 倍”</td>
+<td>⚠️ 边界（见下）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>长敞口的边界</strong>：估值建模式陈述（PE/DCF/分部估值拆解）剔除；情绪式展望（“梭哈到年底”/“明年翻倍”/“年底见 200”）保留——后者本质是顶部 FOMO 的长周期变体。具体边界待 § 五 标注后定。</p>
+</blockquote>
+<h3 id="44-情绪强度门槛">4.4 情绪强度门槛</h3>
+<p>初步方向（待 § 五 标注后定阈值）：</p>
+<ul>
+<li>弱(1)：陈述性语气、无明显情绪信号 → <strong>不要</strong></li>
+<li>中(2)：有情绪倾向但表达克制 → <strong>要</strong></li>
+<li>强(3)：感叹号密集、极端字眼（梭哈/暴富/血亏/跑路） → <strong>要</strong></li>
+</ul>
+<hr>
+<h2 id="五案例研究20-帖验证规律">五、案例研究：20 帖验证规律</h2>
+<p>§ 四 的所有规律都是直觉，<strong>得用真实帖子检验</strong>：哪些 pattern 真的命中合格帖、哪些黑名单词漏判误判、阈值定在哪。</p>
+<h3 id="51-怎么做">5.1 怎么做</h3>
+<p>TODO</p>
+<h3 id="52-标注分工">5.2 标注分工</h3>
+<p><strong>人工只做两步</strong>：① 找出帖子（日常刷 XHS / 朋友推 / watchlist 召回里挑）；② 判断这帖里有没有&quot;好东西&quot;（值不值得收）。</p>
+<p><strong>剩下的 7 维度全由 AI 标</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>字段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>来源</td>
+<td>url / keyword 召回 / 朋友推 / KOL / 信息流偶遇</td>
+</tr>
+<tr>
+<td>互动</td>
+<td>n_likes / n_comments / 发布时长</td>
+</tr>
+<tr>
+<td>句式</td>
+<td>求讨论 / 晒持仓 / 哭诉 / 梭哈宣言 / 焦虑反问</td>
+</tr>
+<tr>
+<td>ticker 提及</td>
+<td>位置（标题/正文/评论）+ 形式（显式 NVDA / 隐式&quot;那只 AI 龙头&quot;）</td>
+</tr>
+<tr>
+<td>情绪强度</td>
+<td>弱(1) / 中(2) / 强(3)</td>
+</tr>
+<tr>
+<td>时间敞口</td>
+<td>短 / 中 / 长</td>
+</tr>
+<tr>
+<td>是否合格</td>
+<td>是 / 否 / 边界</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-期望产出">5.3 期望产出</h3>
+<p>一页 “M1 合格帖筛选规则” 文档：</p>
+<ul>
+<li>“情绪敞口” 的可操作定义</li>
+<li>反验证 § 4.1 句式池命中率、§ 4.2 黑名单准确率</li>
+<li>阈值定下来（§ 4.3 时间敞口边界、§ 4.4 情绪强度门槛）</li>
+<li>4 个候选方案哪条能批量召回合格帖——给 § 六 排序提供依据</li>
+</ul>
+<h3 id="54-时间预算">5.4 时间预算</h3>
+<ul>
+<li>凑 20 帖：1-2h</li>
+<li>标注：1h</li>
+<li>总结规则：30min</li>
+<li><strong>合计 2.5-3.5h，本周末</strong></li>
+</ul>
+<hr>
+<h2 id="六question想听你们意见">六、Question（想听你们意见）</h2>
+<h3 id="61-4-种采集方法-abcd-你给个排序">6.1 4 种采集方法 A/B/C/D 你给个排序</h3>
+<p>最值得先跑的 → 最不值得的，给个排序。理由欢迎一并写。</p>
+<p>我自己的倾向（仅供参考）：</p>
+<ul>
+<li>A 模板帖 ★★★（最先跑，句式池可正则、风险低）</li>
+<li>B 爆款帖评论 ticker tagging ★★★（核心反转 + 数据密度最高；supply 不稳是次要风险）</li>
+<li>D DIY 自发帖 ★★（supply 100% 可控，唯一一个不靠外部供给；需配合副号 + 不删帖管理反作弊）</li>
+<li>C KOL 关注列表 ★（备份，sample bias 重 + KOL 自己也会被限流，仅前三都失败启用）</li>
+</ul>
+<h3 id="62-is_emotional-门控放-m1-还是-m2">6.2 <code>is_emotional</code> 门控放 M1 还是 M2</h3>
+<p><strong>真实 gap</strong>：M1 召回里混了大量财报 / 估值 / 技术分析贴（§ 4.2 黑名单想排的就是这类），不过滤会糊后续聚合。需要一个 <code>is_emotional</code> 门控判&quot;这帖是否情绪化&quot;——§ 4.2 的黑名单粗筛只是其中一种实现。</p>
+<p>放哪一层：</p>
+<table>
+<thead>
+<tr>
+<th>实现</th>
+<th>模块归属</th>
+<th>代价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1 正则/启发式粗筛</td>
+<td>纯 M1</td>
+<td>准确率有限，但不动 M2 prompt</td>
+</tr>
+<tr>
+<td>M2 prompt 加 <code>is_emotional</code> 字段</td>
+<td>M2 主导</td>
+<td>改 <code>config/prompts.yaml</code> → 走 CODEOWNERS</td>
+</tr>
+<tr>
+<td>混合：M1 粗筛 + M2 细判</td>
+<td>跨 M1/M2</td>
+<td>M1 先排明显的，M2 微调 prompt</td>
+</tr>
+</tbody>
+</table>
+<p>我倾向 M1 粗筛（自包含、省 LLM 成本、不走 CODEOWNERS）。直接 M2 prompt 加字段会不会更简单？</p>
+<h3 id="63-方案-ckol保不保留为备份">6.3 方案 C（KOL）保不保留为备份</h3>
+<p>我倾向保留：手动维护 5-10 个多空对冲的 KOL，仅前三方案 supply 都不够时启用，运维成本低。</p>
+<p>直接 ban 掉也行——sample bias + 选谁定调 + KOL 自己被限流，三个风险叠加，作为备份的可靠性打折。</p>
+<hr>
+<h2 id="七下周计划略">七、下周计划（略）</h2>
+<ul>
+<li><strong>P0 头号</strong>：§ 五 案例研究 2.5-3.5h（lele，本周末）</li>
+<li>P0：LLM URL env 化 PR review + 合 main</li>
+<li>P1：根据 § 五 产出 + § 六 排序结果，定 Phase 1 工具方案</li>
+<li>P1：M1 粗筛黑名单 PR（M1 自决）</li>
+</ul>
+<hr>
+<h2 id="八token-用量略">八、Token 用量（略）</h2>
+<!-- TODO ccusage -->
+<hr>
+<h2 id="附录项目级讨论另文本文不展开">附录：项目级讨论（另文，本文不展开）</h2>
+<p>跟 M1 v2 选哪条路无关，待开 <code>docs/project_thesis.md</code> 单独写：</p>
+<ul>
+<li>纯散户情绪敞口 thesis ——“对冲掉其他敞口，只保留情绪指标”，建议明文写进 BLUEPRINT</li>
+<li>和现有情绪指数（VIX / F&amp;G Index / AAII）的差异化 —— 假设 xhs 抓的是&quot;信息劣势的边际买家&quot;，待 M5 回测验证</li>
+</ul>
+<hr>
+<p><em>末更：2026-05-27 · 维护者：lele · M1 v2 讨论稿</em></p>
+
+    <footer class="meta">
+      生成于 2026-05-27 · markdown-it + 内联 CSS · 单文件可上传
+    </footer>
+  </main>
+</div>
+</body>
+</html>

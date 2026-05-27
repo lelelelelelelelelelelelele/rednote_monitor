@@ -1,0 +1,12 @@
+{
+  "name": "report-20260527-lele-week2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "rednote_monitor Week 2 进展周报（lele），HTML 格式试点",
+  "scripts": {
+    "build": "node gen.js"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  }
+}
